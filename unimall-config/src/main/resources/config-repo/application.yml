@@ -1,0 +1,8 @@
+# application.yml — 所有服务共享配置（Spring Cloud Config 客户端启动时总是拉取）
+# 注意：{name}-{profile}.yml 的优先级高于本文件，各服务不要重复覆盖
+
+unimall:
+  jwt:
+    # 生产务必用环境变量 JWT_SECRET 注入（openssl rand -base64 48 生成），禁止提交真实密钥
+    secret: ${JWT_SECRET:unimall-dev-placeholder-secret-key-please-change-in-production-0123456789}
+    expire-seconds: 1800
