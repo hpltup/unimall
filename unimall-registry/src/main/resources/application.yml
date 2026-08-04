@@ -1,0 +1,9 @@
+spring:
+  application:
+    name: unimall-registry
+  cloud:
+    config:
+      name: registry
+      profile: dev
+  config:
+    import: configserver:http://127.0.0.1:10010
