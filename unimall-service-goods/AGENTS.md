@@ -14,6 +14,7 @@
 | `GET /goods/batch?ids=1,2,3` | **内部批量查询**（cart/order 经 Feign 直连调用，不走网关） | 服务间 |
 | `POST /goods/deduct` | **内部扣减库存**（原子 `UPDATE stock=stock-? WHERE stock>=?` 防超卖，不足抛 2002；order/seckill 用） | 服务间 |
 | `POST /goods/restore` | **内部回补库存**（订单取消时） | 服务间 |
+| `GET /goods/internal/for-search` | **内部全量上架商品**（search 服务同步到 ES 用） | 服务间 |
 
 ## 分层与命名（与 user 模块一致）
 

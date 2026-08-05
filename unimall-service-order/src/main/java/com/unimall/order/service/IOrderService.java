@@ -1,7 +1,7 @@
 package com.unimall.order.service;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.unimall.order.pojo.vo.OrderVO;
+import com.unimall.common.vo.OrderVO;
 
 public interface IOrderService
 {
@@ -29,4 +29,19 @@ public interface IOrderService
      * 取消订单：待付款 → 已取消 + 恢复库存
      */
     void cancel(Long userId, Long id);
+
+    /**
+     * 服务间调用（admin）：全部订单分页（可按状态过滤）
+     */
+    Page<OrderVO> adminPage(Integer pageNum, Integer pageSize, Integer status);
+
+    /**
+     * 服务间调用（admin）：发货（1已付款 → 2已完成）
+     */
+    void adminShip(Long id);
+
+    /**
+     * 服务间调用（admin）：取消任意订单（待付款 → 已取消 + 恢复库存）
+     */
+    void adminCancel(Long id);
 }

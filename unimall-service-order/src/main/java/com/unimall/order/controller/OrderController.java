@@ -2,7 +2,7 @@ package com.unimall.order.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.unimall.common.result.Result;
-import com.unimall.order.pojo.vo.OrderVO;
+import com.unimall.common.vo.OrderVO;
 import com.unimall.order.service.IOrderService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -54,6 +54,37 @@ public class OrderController
     public Result<Void> cancel(@RequestHeader("X-User-Id") Long userId, @PathVariable Long id)
     {
         orderService.cancel(userId, id);
+        return Result.ok();
+    }
+
+    /**
+     * 服务间内部接口（admin 调用，不走网关）：全部订单分页
+     */
+    @GetMapping("/internal/admin-list")
+    public Result<Page<OrderVO>> adminList(@RequestParam(defaultValue = "1") Integer pageNum,
+                                           @RequestParam(defaultValue = "10") Integer pageSize,
+                                           @RequestParam(required = false) Integer status)
+    {
+        return Result.ok(orderService.adminPage(pageNum, pageSize, status));
+    }
+
+    /**
+     * 服务间内部接口（admin 调用）：发货
+     */
+    @PostMapping("/internal/admin-ship/{id}")
+    public Result<Void> adminShip(@PathVariable Long id)
+    {
+        orderService.adminShip(id);
+        return Result.ok();
+    }
+
+    /**
+     * 服务间内部接口（admin 调用）：取消任意订单
+     */
+    @PostMapping("/internal/admin-cancel/{id}")
+    public Result<Void> adminCancel(@PathVariable Long id)
+    {
+        orderService.adminCancel(id);
         return Result.ok();
     }
 }

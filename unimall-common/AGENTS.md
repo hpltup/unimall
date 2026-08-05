@@ -9,9 +9,14 @@
 | `com.unimall.common.result.Result<T>` | 统一返回体 `{code, message, data}`，`Result.ok()/ok(data)/fail(code, message)`，`code=0` 成功 |
 | `com.unimall.common.exception.BusinessException` | 业务异常（`code` + `message`），由各服务 `GlobalExceptionHandler` 捕获 |
 | `com.unimall.common.utils.JwtUtil` | JWT 工具（HS256）：`generateToken(Long userId)` / `parseToken` / `getJti` / `getUserId` / `getExpireSeconds()`；payload `sub`=userId、`jti`=UUID |
-| `com.unimall.common.vo.GoodsVO` | 商品出参（**跨服务共享**）：goods 服务返回，cart/order 等 Feign 客户端消费。新增跨服务 Feign DTO 一律放 `common.vo`，不放业务模块 |
+| `com.unimall.common.vo.GoodsVO` | 商品出参（**跨服务共享**）：goods 服务返回，cart/order/admin 等 Feign 客户端消费。新增跨服务 Feign DTO 一律放 `common.vo`/`common.dto`，不放业务模块 |
 | `com.unimall.common.vo.CartItemVO` | 购物车条目出参（**跨服务共享**）：cart 返回，order 下单/清购物车消费 |
+| `com.unimall.common.vo.OrderVO` / `OrderItemVO` | 订单出参（**跨服务共享**）：order 返回，admin 消费 |
+| `com.unimall.common.vo.UserVO` | 用户出参（**跨服务共享**）：user 返回，admin 消费 |
+| `com.unimall.common.vo.SeckillActivityVO` | 秒杀活动出参（**跨服务共享**）：seckill 返回，admin 消费 |
 | `com.unimall.common.dto.GoodsStockDTO` | 库存操作入参（**跨服务共享**）：order/seckill 调 goods 扣/回库存 |
+| `com.unimall.common.dto.GoodsStatusDTO` / `UserStatusDTO` | 上下架/禁用启用入参（**跨服务共享**）：admin 调 goods/user |
+| `com.unimall.common.dto.SeckillActivityCreateDTO` | 秒杀活动创建入参（**跨服务共享**）：admin 调 seckill |
 
 ## 约定与注意
 

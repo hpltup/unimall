@@ -41,7 +41,7 @@
 | `application.yml` | **所有服务共享** | `unimall.jwt.secret` / `expire-seconds`（user 签发 + gateway 校验同一密钥） |
 | `gateway-dev.yml` | unimall-gateway | 9 条路由、CORS、`unimall.gateway.auth.whitelist` |
 | `user-dev.yml` | unimall-service-user | 数据源、Redis、MyBatis-Plus 配置 |
-| `registry-dev.yml` | unimall-registry | **尚未创建**（registry 启动拉取会 404，需补齐） |
+| `registry-dev.yml` | unimall-registry | 占位配置（registry 无数据源/Redis 依赖） |
 
 **加载规则**（Spring Cloud Config 客户端）：每个服务启动时拉取 `application.yml`（共享）+ `{spring.cloud.config.name}-{profile}.yml`（如 `gateway-dev.yml`），后者优先级更高。
 
@@ -101,7 +101,7 @@ unimall-config/src/main/resources/
 ## 七、已知问题与下一步
 
 1. **native 模式未激活**：`application.yml` 尚未配置 `spring.profiles.active=native` + `spring.cloud.config.server.native.search-locations`，`config-repo/` 下的文件当前**不会被任何服务拉到**（各服务启动拉配置会失败）
-2. **`registry-dev.yml` 缺失**：registry 服务配置的 `name=registry`，仓库里没有该文件
+2. **native 模式未激活**：`application.yml` 未配 `spring.profiles.active=native` + `search-locations`，`config-repo/` 下所有文件（含已补齐的 `registry-dev.yml`）当前不会被任何服务拉到，各服务启动拉配置会失败
 3. **Bus / RabbitMQ 未接入**：`/refresh-config-bus` 端点和过滤器已就绪，但消息总线（RabbitMQ）未安装/配置，动态刷新链路未通
 
-**下一步**：激活 native 模式（或用远程 git 仓库）、补齐 `registry-dev.yml`、接入 Bus。
+**下一步**：激活 native 模式（或用远程 git 仓库）、接入 Bus。

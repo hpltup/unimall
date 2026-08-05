@@ -13,8 +13,8 @@ import com.unimall.order.mapper.IOrderItemMapper;
 import com.unimall.order.mapper.IOrderMapper;
 import com.unimall.order.pojo.entity.Order;
 import com.unimall.order.pojo.entity.OrderItem;
-import com.unimall.order.pojo.vo.OrderItemVO;
-import com.unimall.order.pojo.vo.OrderVO;
+import com.unimall.common.vo.OrderItemVO;
+import com.unimall.common.vo.OrderVO;
 import com.unimall.order.service.IOrderService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -166,10 +166,65 @@ public class OrderServiceImpl extends ServiceImpl<IOrderMapper, Order> implement
                 .set(Order::getStatus, STATUS_CANCELLED)
                 .update();
 
-        // 恢复库存
+        restoreOrderStock(id);
+    }
+
+    @Override
+    public Page<OrderVO> adminPage(Integer pageNum, Integer pageSize, Integer status)
+    {
+        Page<Order> page = lambdaQuery()
+                .eq(status != null, Order::getStatus, status)
+                .orderByDesc(Order::getCreateTime)
+                .page(new Page<>(pageNum, pageSize));
+
+        Page<OrderVO> voPage = new Page<>(page.getCurrent(), page.getSize(), page.getTotal());
+        voPage.setRecords(page.getRecords().stream().map(this::toVO).toList());
+        return voPage;
+    }
+
+    @Override
+    public void adminShip(Long id)
+    {
+        Order order = getById(id);
+        if (order == null)
+        {
+            throw new BusinessException(4001, "订单不存在");
+        }
+        if (order.getStatus() != STATUS_PAID)
+        {
+            throw new BusinessException(4002, "订单状态不允许发货");
+        }
+        lambdaUpdate()
+                .eq(Order::getId, id)
+                .set(Order::getStatus, STATUS_FINISHED)
+                .update();
+    }
+
+    @Override
+    public void adminCancel(Long id)
+    {
+        Order order = getById(id);
+        if (order == null)
+        {
+            throw new BusinessException(4001, "订单不存在");
+        }
+        if (order.getStatus() != STATUS_UNPAID)
+        {
+            throw new BusinessException(4002, "订单状态不允许取消");
+        }
+        lambdaUpdate()
+                .eq(Order::getId, id)
+                .set(Order::getStatus, STATUS_CANCELLED)
+                .update();
+
+        restoreOrderStock(id);
+    }
+
+    private void restoreOrderStock(Long orderId)
+    {
         List<OrderItem> orderItems = orderItemMapper.selectList(
                 new LambdaQueryWrapper<OrderItem>()
-                        .eq(OrderItem::getOrderId, id));
+                        .eq(OrderItem::getOrderId, orderId));
         for (OrderItem orderItem : orderItems)
         {
             GoodsStockDTO dto = new GoodsStockDTO();

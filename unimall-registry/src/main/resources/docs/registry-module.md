@@ -77,8 +77,8 @@ unimall-registry/src/main/resources/
 
 ## 六、已知问题
 
-1. **`registry-dev.yml` 尚未在配置仓库提供**：`unimall-config/config-repo/` 下暂无该文件，registry 启动拉取配置会 404 失败，需在 config 端补齐
+1. **config 端 native 模式未激活**：`config-repo/` 整体尚未被任何服务拉到（`registry-dev.yml` 已补齐为占位，见 unimall-config 文档"已知问题"）
 2. **config 端 native 模式未激活**：与上一条联动，config-repo 整体尚未被任何服务拉到（见 unimall-config 文档"已知问题"）
 3. **Nacos 需独立启动**：开发/运行前需在 `nacos-server-2.3.2` 目录执行 `startup.cmd -m standalone`
 
-**下一步**：config 端激活 native + 补齐 `registry-dev.yml`，启动 Nacos 后即可验证注册中心链路。
+**下一步**：激活 native 模式（或用远程 git 仓库）、接入 Bus，启动 Nacos 后即可验证注册中心链路。

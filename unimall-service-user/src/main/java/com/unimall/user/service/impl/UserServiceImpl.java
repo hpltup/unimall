@@ -1,5 +1,7 @@
 package com.unimall.user.service.impl;
 
+import com.baomidou.mybatisplus.core.toolkit.StringUtils;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.unimall.common.exception.BusinessException;
 import com.unimall.common.utils.JwtUtil;
@@ -8,7 +10,7 @@ import com.unimall.user.pojo.dto.LoginDTO;
 import com.unimall.user.pojo.dto.RegisterDTO;
 import com.unimall.user.pojo.entity.User;
 import com.unimall.user.pojo.vo.LoginVO;
-import com.unimall.user.pojo.vo.UserVO;
+import com.unimall.common.vo.UserVO;
 import com.unimall.user.service.IUserService;
 import io.jsonwebtoken.Claims;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -93,6 +95,34 @@ public class UserServiceImpl extends ServiceImpl<IUserMapper, User> implements I
             throw new BusinessException(1002, "用户不存在");
         }
         return toVO(user);
+    }
+
+    @Override
+    public Page<UserVO> adminPage(Integer pageNum, Integer pageSize, String keyword)
+    {
+        Page<User> page = lambdaQuery()
+                .like(StringUtils.isNotBlank(keyword), User::getUsername, keyword)
+                .or(StringUtils.isNotBlank(keyword), wrapper -> wrapper.like(User::getNickname, keyword))
+                .orderByDesc(User::getCreateTime)
+                .page(new Page<>(pageNum, pageSize));
+
+        Page<UserVO> voPage = new Page<>(page.getCurrent(), page.getSize(), page.getTotal());
+        voPage.setRecords(page.getRecords().stream().map(this::toVO).toList());
+        return voPage;
+    }
+
+    @Override
+    public void adminUpdateStatus(Long id, Integer status)
+    {
+        User user = getById(id);
+        if (user == null)
+        {
+            throw new BusinessException(1002, "用户不存在");
+        }
+        lambdaUpdate()
+                .eq(User::getId, id)
+                .set(User::getStatus, status)
+                .update();
     }
 
     private UserVO toVO(User user)

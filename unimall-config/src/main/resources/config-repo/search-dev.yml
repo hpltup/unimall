@@ -1,0 +1,9 @@
+# search-dev.yml — unimall-service-search 服务配置（从 unimall-config 拉取）
+
+spring:
+  elasticsearch:
+    # ES 在虚拟机（端口待用户确认，默认 9200）
+    uris: http://192.168.89.101:9200
+    # 若虚拟机 ES 开启安全认证，取消注释并填写
+    # username: elastic
+    # password: xxx

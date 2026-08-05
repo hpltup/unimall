@@ -44,10 +44,14 @@ UniMall 是一个基于 Spring Cloud Alibaba 的**微服务商城系统**（毕�
 | `unimall-service-order` | 10015 | 订单服务（OpenFeign 三服务链路）：下单（cart 选中条目 → goods 原子扣库存 → 建订单快照 → 清购物车）/订单分页/详情/模拟支付/取消（回库存） |
 | `unimall-service-seckill` | 10016 | 秒杀服务（Redis Lua 防超卖）：活动管理/列表/抢购（Lua 原子扣库存+限购→同步建单）/结果查询（预留 MQ 演进） |
 | `unimall-service-comments` | 10017 | 评论服务：发表评论（需登录）/按商品查评论（公开，白名单）/我的评论/删除自己的评论 |
+| `unimall-service-upload` | 10018 | 文件上传（本地磁盘存储）：POST 上传（需登录，UUID 重命名+扩展名白名单）→ 返回 `/api/upload/{文件名}`；静态资源映射 `/upload/**` 公开访问 |
+| `unimall-service-sendmsg` | 10019 | 消息服务：短信验证码（模拟发送，Redis TTL 5 分钟 + 一次性校验，`/api/sms/send` 白名单）+ 站内信（发送/列表/未读数/标记已读） |
+| `unimall-service-search` | 10020 | 搜索服务（Elasticsearch 8.x + IK/拼音分词）：定时全量同步 goods → ES（10 分钟 + 手动 `POST /search/sync`）、`GET /search/goods` 全文检索（相关性 + 销量排序） |
+| `unimall-service-admin` | 10021 | 后台管理（聚合层，Feign 调各服务）：管理员登录（独立 JWT + Redis `admin:token:` 白名单，内部拦截器鉴权）、商品/订单/用户/秒杀活动管理 |
 
-### 空骨架（4 个，仅 `pom.xml`，无源码无资源）
+### 空骨架
 
-`unimall-service-admin`、`unimall-service-search`、`unimall-service-sendmsg`、`unimall-service-upload`
+**全部 14 个模块已实现**，无空骨架。
 
 > `unimall-item` 已并入 `unimall-service-goods`（商品模型内聚在商品服务，根 pom 已移除该模块）。
 > 网关路由已为 admin/cart/comments/goods/order/search/seckill/upload 预留（`/api/{name}/**`），`sendmsg` 暂无路由。
@@ -79,7 +83,7 @@ com.unimall.user/
 - 业务配置（数据源、Redis、路由、JWT 密钥等）全部在 `unimall-config/src/main/resources/config-repo/`：
   - `application.yml`：所有服务共享（`unimall.jwt.secret` / `expire-seconds`）
   - `{name}-dev.yml`：按服务命名（`user-dev.yml`、`gateway-dev.yml`），优先级高于共享文件
-- **已知问题**：config 端 `application.yml` 未配置 `spring.profiles.active=native`，`config-repo/` 当前**不会被任何服务拉到**；且 `registry-dev.yml` 缺失。新配置变更需同时留意这两点。
+- **已知问题**：config 端 `application.yml` 未配置 `spring.profiles.active=native`，`config-repo/` 当前**不会被任何服务拉到**（所有服务启动拉配置会失败）。新配置变更需留意这一点。
 
 ### 鉴权链路（JWT + Redis 白名单）
 
@@ -161,7 +165,6 @@ mvn clean install    # 全量构建并安装到本地仓库（unimall-common 被
 ## 八、开发中的已知缺口（WIP 状态）
 
 1. `unimall-config` 未激活 native 模式 → 所有服务启动拉取配置会失败（需在 config 端配置 `spring.profiles.active=native` + search-locations，或换远程 git 仓库）
-2. `config-repo/registry-dev.yml` 缺失 → registry 模块启动拉配置 404
-3. `/refresh-config-bus` 端点已就绪但 Spring Cloud Bus（RabbitMQ）未接入，动态刷新未通
-4. 10 个业务模块为空骨架，待按 `unimall-service-user` 的模式开发（common/config/gateway 依赖已就位）
-5. 登出接口、网关未配置的路由（sendmsg/item）等未实现
+2. `/refresh-config-bus` 端点已就绪但 Spring Cloud Bus（RabbitMQ）未接入，动态刷新未通
+3. C 端登出接口未实现（登出 = 删除 Redis `login:token:{jti}`，机制已预留）；网关路由未配 `sendmsg`（`/api/sms/send` 已在白名单但无 lb 路由，需补路由）
+4. 中间件运行验证未做：Nacos / Redis（虚拟机）/ ES（虚拟机）均未启动，各服务仅编译通过、未运行验证；MySQL 建表脚本待执行

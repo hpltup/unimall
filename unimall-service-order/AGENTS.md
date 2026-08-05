@@ -11,6 +11,9 @@
 | `GET /order/detail/{id}` | 订单详情（含明细） |
 | `POST /order/pay/{id}` | 模拟支付：0待付款 → 1已付款 |
 | `POST /order/cancel/{id}` | 取消：0待付款 → 3已取消 + goods 回补库存 |
+| `GET /order/internal/admin-list` | **内部接口**（admin 调）：全部订单分页（可按状态） |
+| `POST /order/internal/admin-ship/{id}` | **内部接口**（admin 调）：发货（1已付款 → 2已完成） |
+| `POST /order/internal/admin-cancel/{id}` | **内部接口**（admin 调）：取消任意订单 + 恢复库存 |
 
 ## 订单状态
 

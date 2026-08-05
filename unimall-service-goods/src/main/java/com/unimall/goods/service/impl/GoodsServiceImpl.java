@@ -107,6 +107,17 @@ public class GoodsServiceImpl extends ServiceImpl<IGoodsMapper, Goods> implement
                 .update();
     }
 
+    @Override
+    public List<GoodsVO> allOnSale()
+    {
+        return lambdaQuery()
+                .eq(Goods::getStatus, 1)
+                .list()
+                .stream()
+                .map(this::toVO)
+                .toList();
+    }
+
     private GoodsVO toVO(Goods goods)
     {
         GoodsVO vo = new GoodsVO();

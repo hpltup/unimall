@@ -1,0 +1,40 @@
+{
+  "properties": {
+    "id": {
+      "type": "long"
+    },
+    "name": {
+      "type": "text",
+      "analyzer": "ik_pinyin_analyzer",
+      "search_analyzer": "ik_smart"
+    },
+    "subTitle": {
+      "type": "text",
+      "analyzer": "ik_pinyin_analyzer",
+      "search_analyzer": "ik_smart"
+    },
+    "categoryId": {
+      "type": "long"
+    },
+    "categoryName": {
+      "type": "keyword"
+    },
+    "mainImage": {
+      "type": "keyword",
+      "index": false
+    },
+    "price": {
+      "type": "double"
+    },
+    "sales": {
+      "type": "integer"
+    },
+    "status": {
+      "type": "integer"
+    },
+    "createTime": {
+      "type": "date",
+      "format": "yyyy-MM-dd HH:mm:ss||epoch_millis"
+    }
+  }
+}

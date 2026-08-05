@@ -1,13 +1,12 @@
 package com.unimall.goods.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.unimall.common.dto.GoodsStatusDTO;
 import com.unimall.common.dto.GoodsStockDTO;
 import com.unimall.common.result.Result;
 import com.unimall.common.vo.GoodsVO;
 import com.unimall.goods.pojo.dto.GoodsCreateDTO;
 import com.unimall.goods.pojo.dto.GoodsQueryDTO;
-import com.unimall.goods.pojo.dto.GoodsStatusDTO;
-import com.unimall.goods.pojo.vo.GoodsVO;
 import com.unimall.goods.service.IGoodsService;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -84,5 +83,14 @@ public class GoodsController
     {
         goodsService.restoreStock(dto.getGoodsId(), dto.getQuantity());
         return Result.ok();
+    }
+
+    /**
+     * 全部上架商品（服务间调用内部接口，search 服务同步到 ES 用）
+     */
+    @GetMapping("/internal/for-search")
+    public Result<List<GoodsVO>> forSearch()
+    {
+        return Result.ok(goodsService.allOnSale());
     }
 }

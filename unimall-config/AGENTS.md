@@ -9,7 +9,7 @@ Spring Cloud Config **Server**（端口 **10010**，`@EnableConfigServer`）。�
 | `application.yml` | 所有服务共享 | `unimall.jwt.secret` / `expire-seconds`（user 签发 + gateway 校验同一密钥） |
 | `gateway-dev.yml` | gateway | 路由 / CORS / 白名单 |
 | `user-dev.yml` | user | 数据源 / Redis / MyBatis-Plus |
-| `registry-dev.yml` | registry | **缺失，需补齐** |
+| `registry-dev.yml` | registry | 占位配置（registry 无数据源/Redis 依赖） |
 
 **新增服务时**：在 config-repo 创建 `{spring.cloud.config.name}-dev.yml`（name 见各服务 `application.yml` 的 `spring.cloud.config.name`）。
 
@@ -22,7 +22,7 @@ Spring Cloud Config **Server**（端口 **10010**，`@EnableConfigServer`）。�
 ## 已知问题（WIP）
 
 1. **native 模式未激活**：`application.yml` 未配 `spring.profiles.active=native` + `search-locations`，`config-repo/` 当前不会被任何服务拉到（各服务启动拉配置会失败）
-2. `registry-dev.yml` 缺失
+2. native 模式未激活：`config-repo/` 当前不会被任何服务拉到（所有服务启动拉配置会失败）
 3. `/refresh-config-bus` 已就绪但 Spring Cloud Bus（RabbitMQ）未接入
 
 ## 注意

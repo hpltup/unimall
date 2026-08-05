@@ -1,8 +1,8 @@
 package com.unimall.seckill.controller;
 
+import com.unimall.common.dto.SeckillActivityCreateDTO;
 import com.unimall.common.result.Result;
-import com.unimall.seckill.pojo.dto.SeckillActivityCreateDTO;
-import com.unimall.seckill.pojo.vo.SeckillActivityVO;
+import com.unimall.common.vo.SeckillActivityVO;
 import com.unimall.seckill.pojo.vo.SeckillOrderVO;
 import com.unimall.seckill.service.ISeckillService;
 import jakarta.validation.Valid;

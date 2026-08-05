@@ -4,7 +4,6 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.unimall.common.vo.GoodsVO;
 import com.unimall.goods.pojo.dto.GoodsCreateDTO;
 import com.unimall.goods.pojo.dto.GoodsQueryDTO;
-import com.unimall.goods.pojo.vo.GoodsVO;
 
 public interface IGoodsService
 {
@@ -42,4 +41,9 @@ public interface IGoodsService
      * 回补库存（订单取消时）
      */
     void restoreStock(Long goodsId, Integer quantity);
+
+    /**
+     * 全部上架商品（服务间调用：search 服务同步到 ES）
+     */
+    java.util.List<GoodsVO> allOnSale();
 }

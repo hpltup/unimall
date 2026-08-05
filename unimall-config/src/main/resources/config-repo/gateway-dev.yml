@@ -92,3 +92,11 @@ unimall:
         - /api/goods/detail
         - /api/category/list
         - /api/comment/list
+        # 上传资源公开访问（带尾斜杠：只放行 /api/upload/xxx 资源路径，上传接口 POST /api/upload 仍需登录）
+        - /api/upload/
+        # 短信验证码发送（免登录场景）
+        - /api/sms/send
+        # 商品搜索（公开）
+        - /api/search/goods
+        # 管理面整体放行（鉴权在 admin 服务内部拦截器，勿删除）
+        - /api/admin

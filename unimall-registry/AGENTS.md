@@ -17,5 +17,5 @@
 
 ## 已知问题
 
-- `config-repo/registry-dev.yml` 缺失 → registry 启动拉配置 404，需在 unimall-config 补齐
+- config 端 native 模式未激活 → registry 启动拉配置会失败（config-repo 整体未生效，见 unimall-config 已知问题）
 - 运行前需手动启动 Nacos（本模块不内嵌）

@@ -1,0 +1,7 @@
+# registry-dev.yml — unimall-registry 服务配置（从 unimall-config 拉取）
+# registry 是注册中心配置客户端壳应用：无数据源/Redis 依赖，本文件主要为占位 + 预留配置项
+
+unimall:
+  registry:
+    # 示例配置项（当前未使用，后续可按需扩展）
+    enabled: true
