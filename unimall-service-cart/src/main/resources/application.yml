@@ -1,0 +1,15 @@
+server:
+  port: 10014
+
+spring:
+  application:
+    name: unimall-service-cart
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 127.0.0.1:8848
+    config:
+      name: cart
+      profile: dev
+  config:
+    import: configserver:http://127.0.0.1:10010

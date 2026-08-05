@@ -30,21 +30,27 @@ UniMall 是一个基于 Spring Cloud Alibaba 的**微服务商城系统**（毕�
 
 根 pom（`groupId=com.unimall`, `artifactId=UniMall`, `version=1.0-SNAPSHOT`, packaging=pom）聚合 15 个模块。
 
-### 已实现（5 个）
+### 已实现（7 个）
 
 | 模块 | 端口 | 职责 |
 |---|---|---|
-| `unimall-common` | -（纯 Java 库） | 公共组件：`Result`、`BusinessException`、`JwtUtil`。**零 Spring 依赖**（保证网关 WebFlux 与业务 MVC 共用不污染类路径） |
+| `unimall-common` | -（纯 Java 库） | 公共组件：`Result`、`BusinessException`、`JwtUtil`、跨服务共享 VO（`GoodsVO`）。**零 Spring 依赖**（保证网关 WebFlux 与业务 MVC 共用不污染类路径），无 Lombok，POJO 手写 getter/setter |
 | `unimall-config` | 10010 | Spring Cloud Config Server（`@EnableConfigServer`）；`config-repo/` 本地仓库；预留 `/refresh-config-bus` 总线刷新端点 |
 | `unimall-gateway` | 10011 | 统一入口：9 条路由（`lb://` + Nacos 负载均衡）、JWT 鉴权过滤器、CORS |
 | `unimall-registry` | 8080（默认，未配 `server.port`） | Nacos Server 部署说明 + 配置客户端壳应用 |
 | `unimall-service-user` | 10012 | 用户服务：注册/登录（签发 JWT + 写 Redis 白名单）/用户信息查询 |
+| `unimall-service-goods` | 10013 | 商品服务（简化版建模：category + goods 单表）：分类/商品分页/详情/新增/上下架，含内部批量接口 `/goods/batch` |
+| `unimall-service-cart` | 10014 | 购物车服务（OpenFeign）：添加（调 goods 校验）/列表（Feign 批量查商品）/改数量/删除；含内部接口 `internal/checked`、`internal/remove`（订单调用） |
+| `unimall-service-order` | 10015 | 订单服务（OpenFeign 三服务链路）：下单（cart 选中条目 → goods 原子扣库存 → 建订单快照 → 清购物车）/订单分页/详情/模拟支付/取消（回库存） |
+| `unimall-service-seckill` | 10016 | 秒杀服务（Redis Lua 防超卖）：活动管理/列表/抢购（Lua 原子扣库存+限购→同步建单）/结果查询（预留 MQ 演进） |
+| `unimall-service-comments` | 10017 | 评论服务：发表评论（需登录）/按商品查评论（公开，白名单）/我的评论/删除自己的评论 |
 
-### 空骨架（10 个，仅 `pom.xml`，无源码无资源）
+### 空骨架（4 个，仅 `pom.xml`，无源码无资源）
 
-`unimall-item`、`unimall-service-admin`、`unimall-service-cart`、`unimall-service-comments`、`unimall-service-goods`、`unimall-service-order`、`unimall-service-search`、`unimall-service-seckill`、`unimall-service-sendmsg`、`unimall-service-upload`
+`unimall-service-admin`、`unimall-service-search`、`unimall-service-sendmsg`、`unimall-service-upload`
 
-> 网关路由已为 admin/cart/comments/goods/order/search/seckill/upload 预留（`/api/{name}/**`），但 `sendmsg`、`item` 暂无路由。
+> `unimall-item` 已并入 `unimall-service-goods`（商品模型内聚在商品服务，根 pom 已移除该模块）。
+> 网关路由已为 admin/cart/comments/goods/order/search/seckill/upload 预留（`/api/{name}/**`），`sendmsg` 暂无路由。
 
 ### 包名与代码分层约定
 

@@ -18,6 +18,6 @@
 
 ## 路由约定
 
-`/api/{服务}/**` + `StripPrefix=1`（`/api/user/login` → 服务端 `/user/login`）。已配 9 条（user/goods/order/cart/seckill/search/upload/comments/admin），`sendmsg`、`item` 未配。
+`/api/{服务}/**` + `StripPrefix=1`（`/api/user/login` → 服务端 `/user/login`）。已配 9 条（user/goods/order/cart/seckill/search/upload/comments/admin），`sendmsg` 未配。
 
 **新增服务路由**：`gateway-dev.yml` 加 route（uri 用 `lb://{服务名}`）+ 如需免登录再加白名单。

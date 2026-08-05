@@ -84,7 +84,11 @@ spring:
 unimall:
   gateway:
     auth:
-      # 无需登录即可访问的路径（登录/注册）
+      # 无需登录即可访问的路径（登录/注册/商品浏览/评论浏览）
       whitelist:
         - /api/user/login
         - /api/user/register
+        - /api/goods/list
+        - /api/goods/detail
+        - /api/category/list
+        - /api/comment/list

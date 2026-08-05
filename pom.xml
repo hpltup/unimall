@@ -21,7 +21,6 @@
         <module>unimall-service-seckill</module>
         <module>unimall-service-sendmsg</module>
         <module>unimall-service-search</module>
-        <module>unimall-item</module>
         <module>unimall-service-upload</module>
         <module>unimall-service-comments</module>
     </modules>
