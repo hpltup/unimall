@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="SqlDialectMappings">
+    <file url="file://$PROJECT_DIR$/sql表/admin.sql" dialect="GenericSQL" />
+    <file url="file://$PROJECT_DIR$/sql表/cart.sql" dialect="GenericSQL" />
+    <file url="file://$PROJECT_DIR$/sql表/comment.sql" dialect="GenericSQL" />
+    <file url="file://$PROJECT_DIR$/sql表/goods.sql" dialect="GenericSQL" />
+    <file url="file://$PROJECT_DIR$/sql表/message.sql" dialect="GenericSQL" />
+    <file url="file://$PROJECT_DIR$/sql表/order.sql" dialect="GenericSQL" />
+    <file url="file://$PROJECT_DIR$/sql表/user.sql" dialect="GenericSQL" />
+  </component>
+</project>
