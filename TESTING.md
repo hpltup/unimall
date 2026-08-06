@@ -286,14 +286,20 @@ curl http://localhost:10011/api/admin/seckill/list -H "Authorization: Bearer $AD
 | 购物车 | 加购（Feign 校验商品）→ 列表（Feign 批量查商品，含小计）✅ |
 | 订单 | 下单（扣库存→建订单快照→清购物车）→ 列表/详情（明细快照正确）✅ |
 | admin | 初始管理员 `admin/123456` 自动创建（AdminInitializer）✅ |
+| 订单支付/取消 | 支付（0→1+payTime）✅；取消（库存回补 98→99）✅ |
+| 购物车冲突修复 | 下单清购物车改**物理删除**（逻辑删除占用唯一索引导致"删了再加购"冲突）→ 再加购成功 ✅ |
+| 秒杀 | Lua 防超卖：库存 100 并发 200 → **恰好 100 条订单**（无超卖）✅；**联动扣减 goods 库存**（200→100）✅；抢购/结果查询 ✅ |
+| 权限修正 | 网关 `AdminProtectFilter`（order=-200）：普通用户访问管理操作/内部接口（`POST /api/goods`、`PUT /api/goods/status`、`/api/*/internal/**`、`/api/goods/batch|deduct|restore`、`POST /api/seckill/activity`）→ 403；抢购保留；admin Feign 直连不受影响 ✅ |
+| 评论 | 发表（`code:0`，路由修复后）✅；列表（公开）✅ |
+| 上传 | Apifox form-data（字段 `file`）上传成功，返回 `/api/upload/xxx.png` ✅ |
+| 短信/站内信 | 发码（日志打印 118147）→ 校验 ✅；站内信发/列表/未读数/已读 ✅（路由补 sendmsg 后） |
+| 搜索（ES） | 中文"华为" ✅ + 拼音"huawei"/"mate" ✅（IK+拼音分词）；修复 createTime Long 转换 + 补 stock 字段 |
+| 后台管理 | admin 登录/商品列表/订单列表/用户列表/秒杀列表/上下架/发货/禁用 ✅（修复 user 缺分页插件导致 total=0） |
 
 ### ⏳ 待验证
 
-- 订单支付（`POST /order/pay/{id}`：0→1 + payTime）、取消（库存回补）
-- 库存扣减确认（下单后 stock 100→98）、购物车清空确认
-- 秒杀（Lua 防超卖并发验证：库存 N 并发 2N，成功 ≤ N）
-- 评论 / 上传 / 短信验证码 / 站内信 / 搜索（ES 中文+拼音）/ 后台管理各接口
-- Bus 动态刷新（RabbitMQ）
+- ~~Bus 动态刷新~~ → **已验证 ✅**：改配置 → push gitee → `POST /actuator/busrefresh`（204）→ 各服务热刷新（test-route 不重启 gateway 即生效）
+- Token 续期机制（refresh token / 滑动过期，当前固定 30 分钟）
 
 ### 🕳 测试踩过的坑（排障参考）
 
@@ -304,3 +310,12 @@ curl http://localhost:10011/api/admin/seckill/list -H "Authorization: Bearer $AD
 5. **加购 3001 商品不存在或已下架**：新增商品**默认下架**（status=0），需先 `PUT /goods/status` 上架
 6. **命令行单独编译报找不到 common 类**：本地仓库 `unimall-common` jar 过旧 → `mvn -pl unimall-common install` 或 `-am` 编译
 7. **HTTP 方法用错**：加购是 POST、列表是 GET，注意区分（405/5000 排查先看方法）
+8. **评论 404**：网关路由 `Path=/api/comments/**`（复数）与服务端 `/comment`（单数）不一致 → 路由改 `/api/comment/**`
+9. **权限漏洞**：商品新增/上下架、秒杀建活动、各服务 `/internal/**` 接口暴露给普通用户 → 网关加 `AdminProtectFilter` 黑名单（403）
+10. **短信 404**：sendmsg 无网关路由 → gateway-dev.yml 补 `/api/sms/**`、`/api/message/**` 路由
+11. **搜索报错（Long→LocalDateTime）**：ES 的 createTime 存成 epoch_millis Long，Spring Data ES 读不回 LocalDateTime → GoodsDoc.createTime 改 Long + 手动转换 + mapping `epoch_millis`（需删索引重建）
+12. **用户管理 total=0**：user 模块缺分页插件（MybatisPlusConfig）→ 补上（其他模块都有，user 漏了）
+13. **RabbitMQ ACCESS_REFUSED**：guest 默认禁止远程 → 建用户 `user/123456`（虚拟机 rabbitmqctl）改配置
+14. **config 服务 busrefresh 405/未暴露**：config 是 Server 不拉 gitee 共享配置 → management/rabbitmq 配置必须放 **config 本地 application.yml**
+15. **未知路径返回 5000**：Spring Boot 3.2+ `NoResourceFoundException` 被 `@ExceptionHandler(Exception)` 兜底 → 各服务 GlobalExceptionHandler 单独处理返回 404
+16. **busrefresh 返回 204**：动作型端点正常响应（成功无内容），非错误

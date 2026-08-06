@@ -34,7 +34,7 @@
     },
     "createTime": {
       "type": "date",
-      "format": "yyyy-MM-dd HH:mm:ss||epoch_millis"
+      "format": "epoch_millis"
     }
   }
 }

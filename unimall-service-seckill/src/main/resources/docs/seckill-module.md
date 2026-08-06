@@ -105,5 +105,5 @@ com.unimall.seckill/
 
 ## 十、启动前提与已知问题
 
-- 前提：MySQL 建表、Nacos、**Redis 虚拟机**、config native 激活
-- 已知问题：活动创建/编辑后无独立预热接口（懒加载已覆盖首次抢购）；秒杀库存与 goods 库存**相互独立**（未联动扣减）；限流未做（后续可在网关接 Sentinel）
+- 前提：MySQL 建表、Nacos、**Redis 虚拟机**、config 启动（git 模式）
+- 已知问题：活动创建/编辑后无独立预热接口（懒加载已覆盖首次抢购）；**秒杀库存已联动扣减 goods 库存**（建单后 Feign 调 `/deduct`，失败回滚）；限流未做（后续可在网关接 Sentinel）

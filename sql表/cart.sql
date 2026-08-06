@@ -27,3 +27,5 @@ CREATE TABLE `cart`
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci COMMENT ='购物车表';
+
+DELETE FROM cart WHERE deleted = 1;

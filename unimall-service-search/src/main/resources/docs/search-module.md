@@ -82,5 +82,6 @@ resources/es/goods-settings.json + goods-mapping.json
 
 ## 八、启动前提与已知问题
 
-- 前提：**ES 虚拟机启动 + IK/拼音插件已装**、Nacos、config native 激活、goods 服务启动（同步依赖）
+- 前提：**ES 虚拟机启动 + IK/拼音插件已装**（已验证：中文"华为"+拼音"huawei"均命中）、Nacos、config 启动（git 模式）、goods 服务启动（同步依赖）
+- 实现要点：`GoodsDoc.createTime` 用 **`Long`（epoch millis）**（Spring Data ES 对 LocalDateTime 存 Long 后无法读回，同步/返回手动转换）；`stock` 字段已映射
 - 已知问题：全量同步（10 分钟）够学习用，数据量大需 canal 增量/双写；未做搜索高亮/价格过滤/聚合分面；`GoodsDoc.categoryName` 预留但 goods 未提供（暂为 null）

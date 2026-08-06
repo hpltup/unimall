@@ -36,7 +36,8 @@ com.unimall.admin/
 └── config/
     ├── AdminAuthInterceptor.java    # 管理面鉴权拦截器
     ├── AdminInitializer.java        # 启动创建初始管理员（admin/123456）
-    ├── WebConfig.java               # 拦截器注册（放行 /admin/login）+ JwtUtil Bean
+    ├── JwtConfig.java               # JwtUtil Bean（独立配置类，避免与拦截器循环依赖）
+    ├── WebConfig.java               # 拦截器注册（放行 /admin/login）
     ├── GlobalExceptionHandler.java + MybatisPlusConfig.java
 ```
 

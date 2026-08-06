@@ -101,5 +101,5 @@ com.unimall.goods/
 
 ## 九、启动前提与已知问题
 
-- 前提：MySQL 建表、Nacos、config native 激活
-- 已知问题：商品浏览的 Redis 缓存未做（缓存穿透/击穿处理留待后续）；库存扣减在数据库层（order 用），秒杀走 Redis（seckill 独立库存）
+- 前提：MySQL 建表、Nacos、config 启动（git 模式）
+- 已知问题：商品浏览的 Redis 缓存未做（缓存穿透/击穿处理留待后续）；库存扣减在数据库层（order 用），秒杀用 Redis（**秒杀库存已联动扣减 goods 库存**，见 seckill 模块）

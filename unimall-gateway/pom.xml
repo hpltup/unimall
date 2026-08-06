@@ -54,6 +54,18 @@
             <artifactId>unimall-common</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
+
+        <!-- Bus：配置动态刷新广播（RabbitMQ），网关路由可热更新 -->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-bus-amqp</artifactId>
+        </dependency>
+
+        <!-- Actuator：暴露 /actuator/busrefresh 等刷新端点 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
     </dependencies>
 
 </project>

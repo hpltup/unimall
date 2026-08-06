@@ -111,7 +111,7 @@ public class CartServiceImpl extends ServiceImpl<ICartMapper, Cart> implements I
     public void remove(Long userId, Long id)
     {
         getCartOfUser(userId, id);
-        removeById(id);
+        baseMapper.deletePhysical(userId, List.of(id));
     }
 
     @Override
@@ -154,10 +154,8 @@ public class CartServiceImpl extends ServiceImpl<ICartMapper, Cart> implements I
         {
             return;
         }
-        lambdaUpdate()
-                .eq(Cart::getUserId, userId)
-                .in(Cart::getId, ids)
-                .remove();
+        // 物理删除（非逻辑删除）：避免 deleted=1 的记录占用唯一索引，导致用户再次加购同一商品时冲突
+        baseMapper.deletePhysical(userId, ids);
     }
 
     private GoodsVO getGoods(Long goodsId)

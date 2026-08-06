@@ -17,5 +17,5 @@
 
 ## 已知问题
 
-- config 端 native 模式未激活 → registry 启动拉配置会失败（config-repo 整体未生效，见 unimall-config 已知问题）
+- config 采用 gitee git 仓库模式（`search-paths: '*-dev'`，registry-dev.yml 已在仓库），见 unimall-config 已知问题
 - 运行前需手动启动 Nacos（本模块不内嵌）

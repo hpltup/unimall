@@ -80,5 +80,5 @@ com.unimall.sendmsg/
 
 ## 八、启动前提与已知问题
 
-- 前提：MySQL 建表、Nacos、Redis、config native 激活
+- 前提：MySQL 建表、Nacos、Redis、config 启动（git 模式）
 - 已知问题：验证码接口未接入 user 注册/登录流程（手机号注册可后续接 `/sms/verify`）；未做发送频率限制（60s 内不重复）；站内信发送未走消息总线/异步

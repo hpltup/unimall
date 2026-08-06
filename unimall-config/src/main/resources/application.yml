@@ -4,6 +4,12 @@ server:
 spring:
   application:
     name: unimall-config
+  # config 服务自身不拉 gitee 共享配置，RabbitMQ/端点暴露需在本地配置
+  rabbitmq:
+    host: 192.168.89.101
+    port: 5672
+    username: user
+    password: 123456
   cloud:
     config:
       server:
@@ -17,3 +23,9 @@ spring:
           default-label: master
           # 各服务配置文件在 {name}-dev/ 子目录中，追加搜索路径（application.yml 在根目录，默认即可找到）
           search-paths: '*-dev'
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: busrefresh,refresh,health

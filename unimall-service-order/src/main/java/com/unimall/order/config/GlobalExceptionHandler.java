@@ -28,6 +28,12 @@ public class GlobalExceptionHandler
         return Result.fail(1005, message);
     }
 
+    @ExceptionHandler(org.springframework.web.servlet.resource.NoResourceFoundException.class)
+    public Result<Void> handleNoResource(org.springframework.web.servlet.resource.NoResourceFoundException e)
+    {
+        return Result.fail(404, "资源不存在");
+    }
+
     @ExceptionHandler(Exception.class)
     public Result<Void> handleException(Exception e)
     {

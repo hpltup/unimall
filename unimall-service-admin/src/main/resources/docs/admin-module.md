@@ -81,7 +81,8 @@ com.unimall.admin/
 └── config/
     ├── AdminAuthInterceptor.java  # 管理面鉴权拦截器
     ├── AdminInitializer.java      # 初始管理员自动创建
-    ├── WebConfig.java             # 拦截器注册（放行 /admin/login）+ JwtUtil Bean
+    ├── JwtConfig.java             # JwtUtil Bean（独立配置类，避免循环依赖）
+    ├── WebConfig.java             # 拦截器注册（放行 /admin/login）
     ├── GlobalExceptionHandler.java + MybatisPlusConfig.java
 ```
 
@@ -94,5 +95,5 @@ com.unimall.admin/
 
 ## 八、启动前提与已知问题
 
-- 前提：MySQL 建表（admin_user 由启动初始化）、Nacos、Redis、config native 激活、**下游服务已启动**（Feign 聚合）
+- 前提：MySQL 建表（admin_user 由启动初始化）、Nacos、Redis、config 启动（git 模式）、**下游服务已启动**（Feign 聚合）
 - 已知问题：单管理员无 RBAC（表结构可扩展）；统计概览未做；Feign 无超时/熔断（下游不可用时管理接口 500）

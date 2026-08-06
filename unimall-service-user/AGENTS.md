@@ -22,7 +22,10 @@ com.unimall.user/
 ├── service/impl/UserServiceImpl.java  # 继承 ServiceImpl<IUserMapper, User>
 ├── mapper/IUserMapper.java   # 继承 BaseMapper<User>（I 开头）
 ├── pojo/entity|dto|vo/       # 实体 / 入参(@Valid) / 出参(白名单，不含 password)
-└── config/GlobalExceptionHandler.java # @RestControllerAdvice
+└── config/
+    ├── GlobalExceptionHandler.java # @RestControllerAdvice（含 NoResourceFoundException → 404）
+    ├── JwtConfig.java              # JwtUtil Bean（从 unimall.jwt 构造，登录签发用）
+    └── MybatisPlusConfig.java      # 分页插件（adminPage 等分页查询依赖）
 ```
 
 ## 要点
@@ -33,4 +36,6 @@ com.unimall.user/
 - Redis：MVC 服务用 **`StringRedisTemplate`**；key 前缀 `login:token:` 与网关一致
 - 建表脚本 `src/main/resources/sql/user.sql`（建库 `unimall` + 建表）
 - 业务配置在配置中心 `user-dev.yml`（datasource/redis/mp），本地 `application.yml` 只留引导
+- **分页必须依赖 `MybatisPlusConfig` 分页插件**（曾缺此配置导致 adminPage total=0）
+- `JwtUtil` Bean 在 `config/JwtConfig.java`（曾缺导致启动失败：bean not found）
 - MyBatis-Plus 用 **3.5.5**（3.5.17 模块重构，`ServiceImpl` 不在 extension，勿升回）

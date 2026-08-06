@@ -69,5 +69,5 @@ com.unimall.comments/
 
 ## 八、启动前提与已知问题
 
-- 前提：MySQL 建表、Nacos、config native 激活
+- 前提：MySQL 建表、Nacos、config 启动（git 模式）
 - 已知问题：`CommentVO` 未带用户名/头像（需调 user 服务或评论表冗余快照）；商品平均评分聚合未做；未校验"已购用户才能评论"

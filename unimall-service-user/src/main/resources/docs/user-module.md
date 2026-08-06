@@ -134,7 +134,7 @@ com.unimall.user/
 ├── service/IUserService.java + impl/UserServiceImpl.java
 ├── mapper/IUserMapper.java
 ├── pojo/entity/User.java、dto/RegisterDTO, LoginDTO, UserStatusDTO、vo/LoginVO
-└── config/GlobalExceptionHandler.java
+└── config/GlobalExceptionHandler.java, JwtConfig.java（JwtUtil Bean）, MybatisPlusConfig.java（分页插件）
 ```
 
 ## 九、配置说明
@@ -145,5 +145,5 @@ com.unimall.user/
 
 ## 十、启动前提与已知问题
 
-- 前提：MySQL 建表、Nacos、Redis、config native 激活
+- 前提：MySQL 建表、Nacos、Redis、config 启动（git 模式）
 - 已知问题：**登出接口未实现**（机制已预留：登出 = 删除 Redis `login:token:{jti}`）

@@ -25,6 +25,8 @@ UniMall 是一个基于 Spring Cloud Alibaba 的**微服务商城系统**（毕�
 | Redis | - | 登录 token 白名单；网关用 reactive 版，MVC 服务用普通版 |
 | jjwt | 0.12.6 | JWT，版本在 `unimall-common/pom.xml` 写死（根 pom 未管理） |
 | Lombok | 1.18.30 | `@Data` 等 |
+| Spring Cloud Bus (AMQP) | 2023.0.1 管理 | 配置动态刷新广播（RabbitMQ，虚拟机 `user/123456`），`/actuator/busrefresh` |
+| Actuator | Boot 3.3 管理 | 所有服务暴露 `busrefresh,refresh,health` 端点 |
 
 ## 二、模块划分
 
@@ -80,10 +82,11 @@ com.unimall.user/
 ### 配置加载（重要）
 
 - 每个服务本地 `application.yml` 只放**引导配置**：端口、`spring.application.name`、Nacos 地址、`spring.cloud.config.name/profile`、`spring.config.import: configserver:http://127.0.0.1:10010`
-- 业务配置（数据源、Redis、路由、JWT 密钥等）全部在 `unimall-config/src/main/resources/config-repo/`：
-  - `application.yml`：所有服务共享（`unimall.jwt.secret` / `expire-seconds`）
-  - `{name}-dev.yml`：按服务命名（`user-dev.yml`、`gateway-dev.yml`），优先级高于共享文件
-- **已知问题**：config 端 `application.yml` 未配置 `spring.profiles.active=native`，`config-repo/` 当前**不会被任何服务拉到**（所有服务启动拉配置会失败）。新配置变更需留意这一点。
+- 业务配置（数据源、Redis、路由、JWT 密钥等）全部在 **gitee 仓库 `unimall-config-dev`**（Config Server git 模式，13 个配置文件）：
+  - `application.yml`：所有服务共享（`unimall.jwt.secret` / `expire-seconds`、**RabbitMQ 连接、actuator 端点暴露**）
+  - `{name}-dev.yml`：按服务命名（`user-dev.yml`、`gateway-dev.yml`），优先级高于共享文件；**业务文件在 `{name}-dev/` 子目录**，Config Server 配了 `search-paths: '*-dev'`
+- config 服务自身配置（git 仓库、RabbitMQ、management 端点）在**本地 `application.yml`**——config 是 Server 不拉 gitee 共享配置，这点与业务服务不同
+- **Bus 动态刷新**：所有服务已接入 `spring-cloud-starter-bus-amqp` + actuator；改配置 → push gitee → `POST /actuator/busrefresh`（任一直连端口）广播 → 全服务热刷新，零重启
 
 ### 鉴权链路（JWT + Redis 白名单）
 
@@ -97,6 +100,7 @@ com.unimall.user/
 下游服务从请求头 X-User-Id 取用户身份，不再重复验签（信任内网转发）
 ```
 
+- **管理/内部接口保护**：网关 `AdminProtectFilter(order=-200)` 拦截普通用户访问管理操作与内部接口（`POST /api/goods`、`PUT /api/goods/status`、`/api/*/internal/**`、`/api/goods/batch|deduct|restore`、`POST /api/seckill/activity`）→ 403；管理操作只能走 `/api/admin/*`（admin 服务 Feign 直连，不经网关）
 - Redis key 前缀 `login:token:`（网关 `AuthGlobalFilter` 与 user 服务 `UserServiceImpl` 各有一份常量，注意保持一致）
 - JWT payload：`sub`=userId、`jti`=UUID、`iat`、`exp`；HS256，密钥必须 >= 32 字节
 
@@ -164,7 +168,8 @@ mvn clean install    # 全量构建并安装到本地仓库（unimall-common 被
 
 ## 八、开发中的已知缺口（WIP 状态）
 
-1. `unimall-config` 未激活 native 模式 → 所有服务启动拉取配置会失败（需在 config 端配置 `spring.profiles.active=native` + search-locations，或换远程 git 仓库）
-2. `/refresh-config-bus` 端点已就绪但 Spring Cloud Bus（RabbitMQ）未接入，动态刷新未通
-3. C 端登出接口未实现（登出 = 删除 Redis `login:token:{jti}`，机制已预留）；网关路由未配 `sendmsg`（`/api/sms/send` 已在白名单但无 lb 路由，需补路由）
-4. 中间件运行验证未做：Nacos / Redis（虚拟机）/ ES（虚拟机）均未启动，各服务仅编译通过、未运行验证；MySQL 建表脚本待执行
+1. ~~config native 未激活~~ → **已改为 gitee git 仓库模式**（`spring.cloud.config.server.git` + `search-paths: '*-dev'`），配置文件在 gitee 仓库 `unimall-config-dev`
+2. ~~Bus 未接入~~ → **已接入**（`spring-cloud-starter-bus-amqp` + actuator，`POST /actuator/busrefresh` 广播热刷新已验证，RabbitMQ 虚拟机 `user/123456`）
+3. C 端登出接口未实现（登出 = 删除 Redis `login:token:{jti}`，机制已预留）
+4. ~~运行验证未做~~ → **全链路验证已完成**（注册→下单→支付/取消→秒杀防超卖→搜索→后台→Bus 热刷新，详见 `TESTING.md`，含测试期修复的 15 个问题）
+5. **Token 续期机制未做**：当前 JWT 固定 30 分钟过期（`expire-seconds: 1800`），无 refresh token / 滑动续期——用户操作中会"突然下线"，需后续实现

@@ -56,7 +56,13 @@ spring:
         - id: unimall-service-comments
           uri: lb://unimall-service-comments
           predicates:
-            - Path=/api/comments/**
+            - Path=/api/comment/**
+          filters:
+            - StripPrefix=1
+        - id: unimall-service-sendmsg
+          uri: lb://unimall-service-sendmsg
+          predicates:
+            - Path=/api/sms/**,/api/message/**
           filters:
             - StripPrefix=1
         - id: unimall-service-admin

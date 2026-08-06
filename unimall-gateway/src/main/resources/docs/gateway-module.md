@@ -33,6 +33,7 @@
 | `spring-cloud-starter-config` | 配置中心客户端 |
 | `spring-boot-starter-data-redis-reactive` | WebFlux 下操作 Redis（token 白名单） |
 | `unimall-common` | `JwtUtil` / `Result` |
+| `spring-cloud-starter-bus-amqp` + actuator | Bus 动态刷新（路由热加载），`/actuator/busrefresh` |
 
 ## 三、路由设计
 
@@ -47,10 +48,11 @@
 | unimall-service-seckill | `/api/seckill/**` | `lb://unimall-service-seckill` |
 | unimall-service-search | `/api/search/**` | `lb://unimall-service-search` |
 | unimall-service-upload | `/api/upload/**` | `lb://unimall-service-upload` |
-| unimall-service-comments | `/api/comments/**` | `lb://unimall-service-comments` |
+| unimall-service-comments | `/api/comment/**` | `lb://unimall-service-comments` |
 | unimall-service-admin | `/api/admin/**` | `lb://unimall-service-admin` |
+| unimall-service-sendmsg | `/api/sms/**`、`/api/message/**` | `lb://unimall-service-sendmsg` |
 
-> 路由在配置中心 `gateway-dev.yml`（`spring.cloud.gateway.routes`），改路由无需动代码。`sendmsg` 未配 lb 路由（`/api/sms/send` 在白名单但无路由，WIP）。
+> 路由在配置中心 `gateway-dev.yml`（`spring.cloud.gateway.routes`），改路由无需动代码（Bus 广播热刷新）。
 
 ## 四、鉴权设计
 
@@ -71,6 +73,14 @@
 5. 通过：附加 `X-User-Id` 头转发（服务端信任该头，不再重复验签）
 
 401 响应：`Result.fail(401, "未登录或token已失效")`，JSON。
+
+### 管理/内部接口保护（`filter/AdminProtectFilter.java`，order=-200）
+
+普通用户经网关访问管理操作或内部接口 → **403**：`POST /api/goods`、`PUT /api/goods/status`、`/api/*/internal/**`、`/api/goods/batch|deduct|restore`、`POST /api/seckill/activity`。管理操作只能走 `/api/admin/*`（admin 服务 Feign 直连，不经网关）。
+
+### Bus 动态刷新
+
+已接入 `spring-cloud-starter-bus-amqp` + actuator：改 `gateway-dev.yml` → push gitee → `POST /actuator/busrefresh` → 网关路由热加载（**已验证，不重启**）。
 
 ### 白名单清单（`gateway-dev.yml`）
 
@@ -136,6 +146,7 @@ unimall-gateway/src/main/java/com/unimall/gateway/
 ## 八、启动前提
 
 1. Nacos 启动（服务发现）
-2. `unimall-config` 启动（native 激活后提供配置）——**当前未激活，网关启动会失败**
+2. `unimall-config` 启动（gitee git 模式，已验证）
 3. Redis 虚拟机（鉴权查白名单）
-4. 业务服务注册到 Nacos（否则对应路由 503）
+4. RabbitMQ 虚拟机（Bus，`user/123456`）
+5. 业务服务注册到 Nacos（否则对应路由 503）

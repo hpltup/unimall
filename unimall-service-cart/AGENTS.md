@@ -31,6 +31,7 @@ com.unimall.cart/
 
 - 错误码：`3001 商品不存在或已下架` / `3002 购物车条目不存在` / `1005` / `5000`
 - 表 `cart`：`(user_id, goods_id)` 唯一索引（重复添加合并数量），`checked` 选中标记（下单时用）
+- **删除为物理删除**（`ICartMapper.deletePhysical`）：购物车是临时数据，逻辑删除会占用唯一索引导致"删了再加购"冲突（曾踩坑，已改物理 DELETE）
 - **商品信息不入库**：名称/图/价格来自 goods 服务，Feign 批量查（`/goods/batch`）
 - **跨服务共享 DTO（`GoodsVO`）在 `unimall-common.vo`**，不在业务模块——新增 Feign DTO 同理
 - Feign 依赖：`spring-cloud-starter-openfeign` + `spring-cloud-starter-loadbalancer`（2023 系无 Ribbon，必须显式引）

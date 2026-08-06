@@ -18,6 +18,9 @@ import org.springframework.data.elasticsearch.core.SearchHits;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 
 @Service
@@ -91,8 +94,10 @@ public class SearchServiceImpl implements ISearchService
         doc.setMainImage(goods.getMainImage());
         doc.setPrice(goods.getPrice());
         doc.setSales(goods.getSales());
+        doc.setStock(goods.getStock());
         doc.setStatus(goods.getStatus());
-        doc.setCreateTime(goods.getCreateTime());
+        doc.setCreateTime(goods.getCreateTime() == null ? null
+                : goods.getCreateTime().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli());
         return doc;
     }
 
@@ -106,8 +111,10 @@ public class SearchServiceImpl implements ISearchService
         vo.setMainImage(doc.getMainImage());
         vo.setPrice(doc.getPrice());
         vo.setSales(doc.getSales());
+        vo.setStock(doc.getStock());
         vo.setStatus(doc.getStatus());
-        vo.setCreateTime(doc.getCreateTime());
+        vo.setCreateTime(doc.getCreateTime() == null ? null
+                : Instant.ofEpochMilli(doc.getCreateTime()).atZone(ZoneId.systemDefault()).toLocalDateTime());
         return vo;
     }
 }

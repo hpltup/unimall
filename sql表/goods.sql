@@ -59,3 +59,5 @@ CREATE TABLE `goods`
 INSERT INTO `category` (`name`, `parent_id`, `sort`) VALUES ('手机数码', 0, 1);
 INSERT INTO `category` (`name`, `parent_id`, `sort`) VALUES ('服饰鞋包', 0, 2);
 INSERT INTO `category` (`name`, `parent_id`, `sort`) VALUES ('食品生鲜', 0, 3);
+
+UPDATE goods SET stock = 200 WHERE id = 1;

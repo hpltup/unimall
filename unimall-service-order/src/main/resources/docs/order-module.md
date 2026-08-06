@@ -115,5 +115,5 @@ com.unimall.order/
 
 ## 九、启动前提与已知问题
 
-- 前提：MySQL 建表、Nacos、config native 激活、**goods/cart 已启动**（Feign 依赖）
+- 前提：MySQL 建表、Nacos、config 启动（git 模式）、**goods/cart 已启动**（Feign 依赖）
 - 已知问题：Feign 无超时/熔断；支付为模拟（未接真实支付/回调）；无分布式事务（简化方案）

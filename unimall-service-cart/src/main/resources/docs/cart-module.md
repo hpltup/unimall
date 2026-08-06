@@ -81,7 +81,7 @@ list(userId)
 ### 内部接口
 
 - `listChecked`：`checked=1` 的条目（同样批量查商品组装）
-- `removeBatch`：`eq(userId).in(ids).remove()`（逻辑删除）
+- `removeBatch`：`baseMapper.deletePhysical(userId, ids)`（**物理删除**——逻辑删除会占用唯一索引，导致"删了再加购"冲突，曾踩坑）
 
 ## 六、跨服务协作
 
@@ -110,6 +110,6 @@ com.unimall.cart/
 
 ## 九、启动前提与已知问题
 
-- 前提：MySQL 建表、Nacos、config native 激活、**goods 服务已启动**（Feign 依赖）
+- 前提：MySQL 建表、Nacos、config 启动（git 模式）、**goods 服务已启动**（Feign 依赖）
 - 已知问题：`IGoodsClient` 无超时/熔断配置——goods 不可用时购物车接口 500，后续可接 `feign.circuitbreaker`
 - 购物车全接口需登录：不进网关白名单

@@ -40,7 +40,8 @@ resources/es/goods-settings.json + goods-mapping.json
 ## 要点
 
 - **无 MySQL / MyBatis-Plus**：纯 ES 服务，不落库
-- ES 配置：`spring.elasticsearch.uris: http://192.168.89.101:9200`（配置中心 `search-dev.yml`；**ES 未启动，代码未验证**；若开安全认证需补 username/password）
+- ES 配置：`spring.elasticsearch.uris: http://192.168.89.101:9200`（配置中心 `search-dev.yml`；**已验证**：中文"华为" + 拼音"huawei"均命中；若开安全认证需补 username/password）
+- **`GoodsDoc.createTime` 用 `Long`（epoch millis）**：Spring Data ES 对 LocalDateTime 存成 Long 后无法读回（曾报 ConverterNotFoundException），同步/返回时手动转换；`stock` 字段已映射
 - 查询用 `ElasticsearchOperations` + `NativeQueryBuilder`（Spring Data ES 5.3.x / ES Java Client 8.x DSL）
 - 返回 `SearchPageVO<GoodsVO>`（records/total/current/size，前端与其他服务 MP Page 无感）
 - 搜索/同步依赖 goods 服务（Feign），goods 挂了同步会跳过（warn 日志）

@@ -21,9 +21,9 @@ Spring Cloud Config **Server**（端口 **10010**，`@EnableConfigServer`）。�
 
 ## 已知问题（WIP）
 
-1. **native 模式未激活**：`application.yml` 未配 `spring.profiles.active=native` + `search-locations`，`config-repo/` 当前不会被任何服务拉到（各服务启动拉配置会失败）
-2. native 模式未激活：`config-repo/` 当前不会被任何服务拉到（所有服务启动拉配置会失败）
-3. `/refresh-config-bus` 已就绪但 Spring Cloud Bus（RabbitMQ）未接入
+1. **config 采用 gitee git 仓库模式**（`spring.cloud.config.server.git` + `search-paths: '*-dev'`），非 native——配置文件在 gitee 仓库 `unimall-config-dev`（13 个）
+2. **config 自身配置在本地 application.yml**：config 是 Server 不拉 gitee 共享配置，`management`/`rabbitmq` 必须写本地（busrefresh 端点依赖）
+3. **Bus 已接入**：`spring-cloud-starter-bus-amqp` + actuator，`POST /actuator/busrefresh` 广播热刷新已验证（RabbitMQ 虚拟机 `user/123456`）
 
 ## 注意
 

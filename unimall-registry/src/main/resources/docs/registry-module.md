@@ -78,6 +78,6 @@ unimall-registry/src/main/resources/
 ## 六、启动前提与已知问题
 
 1. **Nacos 需独立启动**：`nacos-server-2.3.2/bin/startup.cmd -m standalone`
-2. **config 端 native 模式未激活**：`config-repo/` 整体尚未被任何服务拉到（`registry-dev.yml` 已补齐为占位，但 config 不提供它之前，registry 启动拉配置会失败——见 unimall-config 文档"已知问题"）
+2. **config 采用 gitee git 仓库模式**（`search-paths: '*-dev'`），`registry-dev.yml` 已在仓库（占位）；config 启动后 registry 即可拉取配置——见 unimall-config 文档
 
-**下一步**：config 端激活 native，启动 Nacos 后即可验证注册中心链路。
+**下一步**：启动 Nacos 后即可验证注册中心链路（config 已 git 模式就绪）。

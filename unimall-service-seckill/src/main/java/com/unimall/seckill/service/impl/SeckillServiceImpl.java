@@ -1,9 +1,13 @@
 package com.unimall.seckill.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.unimall.common.dto.GoodsStockDTO;
 import com.unimall.common.dto.SeckillActivityCreateDTO;
 import com.unimall.common.exception.BusinessException;
+import com.unimall.common.result.Result;
 import com.unimall.common.vo.SeckillActivityVO;
+import com.unimall.seckill.client.IGoodsClient;
 import com.unimall.seckill.mapper.ISeckillActivityMapper;
 import com.unimall.seckill.mapper.ISeckillOrderMapper;
 import com.unimall.seckill.pojo.entity.SeckillActivity;
@@ -43,11 +47,13 @@ public class SeckillServiceImpl extends ServiceImpl<ISeckillActivityMapper, Seck
 
     private final StringRedisTemplate redisTemplate;
     private final ISeckillOrderMapper orderMapper;
+    private final IGoodsClient goodsClient;
 
-    public SeckillServiceImpl(StringRedisTemplate redisTemplate, ISeckillOrderMapper orderMapper)
+    public SeckillServiceImpl(StringRedisTemplate redisTemplate, ISeckillOrderMapper orderMapper, IGoodsClient goodsClient)
     {
         this.redisTemplate = redisTemplate;
         this.orderMapper = orderMapper;
+        this.goodsClient = goodsClient;
     }
 
     @Override
@@ -131,7 +137,7 @@ public class SeckillServiceImpl extends ServiceImpl<ISeckillActivityMapper, Seck
             throw new BusinessException(5004, "超过每人限购数量");
         }
 
-        // 建秒杀订单（独立方法：MQ 演进时由消费者调用）
+        // 建秒杀订单 + 联动扣减 goods 库存（独立方法：MQ 演进时由消费者调用）
         return createSeckillOrder(activity, userId);
     }
 
@@ -139,7 +145,7 @@ public class SeckillServiceImpl extends ServiceImpl<ISeckillActivityMapper, Seck
     public SeckillOrderVO result(String orderNo)
     {
         SeckillOrder order = orderMapper.selectOne(
-                new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<SeckillOrder>()
+                new LambdaQueryWrapper<SeckillOrder>()
                         .eq(SeckillOrder::getOrderNo, orderNo));
         if (order == null)
         {
@@ -150,6 +156,7 @@ public class SeckillServiceImpl extends ServiceImpl<ISeckillActivityMapper, Seck
 
     /**
      * 创建秒杀订单（独立封装：后续切换 RabbitMQ 异步削峰时，由消费者调用本方法）
+     * 建单成功后联动扣减 goods 库存；扣减失败则回滚（回补 Redis + 删除订单）
      */
     private String createSeckillOrder(SeckillActivity activity, Long userId)
     {
@@ -165,6 +172,20 @@ public class SeckillServiceImpl extends ServiceImpl<ISeckillActivityMapper, Seck
         order.setTotal(activity.getSeckillPrice());
         order.setStatus(0);
         orderMapper.insert(order);
+
+        // 联动扣减 goods 库存（保证秒杀卖出后商品库存同步减少，避免后续正常下单超卖）
+        GoodsStockDTO dto = new GoodsStockDTO();
+        dto.setGoodsId(activity.getGoodsId());
+        dto.setQuantity(order.getQuantity());
+        Result<Void> result = goodsClient.deductStock(dto);
+        if (result == null || result.getCode() != 0)
+        {
+            // 回滚：回补 Redis 秒杀库存与限购计数 + 删除秒杀订单，保持一致性
+            redisTemplate.opsForValue().increment(STOCK_KEY_PREFIX + activity.getId(), order.getQuantity());
+            redisTemplate.opsForValue().decrement(LIMIT_KEY_PREFIX + activity.getId() + ":" + userId, order.getQuantity());
+            orderMapper.deleteById(order.getId());
+            throw new BusinessException(5006, "商品库存不足，秒杀失败");
+        }
         return order.getOrderNo();
     }
 

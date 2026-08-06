@@ -35,7 +35,10 @@ public class GoodsDoc
 
     private Integer sales;
 
+    private Integer stock;
+
     private Integer status;
 
-    private LocalDateTime createTime;
+    /** epoch millis（Spring Data ES 对 LocalDateTime 存成 Long 后无法读回，故用 Long 存） */
+    private Long createTime;
 }
