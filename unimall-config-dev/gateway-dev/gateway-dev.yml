@@ -1,0 +1,102 @@
+# gateway-dev.yml — 网关配置（从 unimall-config 拉取）
+# 路由、CORS、鉴权配置放配置中心：便于集中管理、环境隔离、Bus 动态刷新
+
+spring:
+  data:
+    redis:
+      host: 192.168.89.101
+      port: 6379
+      password: Redis123456
+      database: 0
+  cloud:
+    gateway:
+      routes:
+        - id: unimall-service-user
+          uri: lb://unimall-service-user
+          predicates:
+            - Path=/api/user/**
+          filters:
+            - StripPrefix=1
+        - id: unimall-service-goods
+          uri: lb://unimall-service-goods
+          predicates:
+            - Path=/api/goods/**
+          filters:
+            - StripPrefix=1
+        - id: unimall-service-order
+          uri: lb://unimall-service-order
+          predicates:
+            - Path=/api/order/**
+          filters:
+            - StripPrefix=1
+        - id: unimall-service-cart
+          uri: lb://unimall-service-cart
+          predicates:
+            - Path=/api/cart/**
+          filters:
+            - StripPrefix=1
+        - id: unimall-service-seckill
+          uri: lb://unimall-service-seckill
+          predicates:
+            - Path=/api/seckill/**
+          filters:
+            - StripPrefix=1
+        - id: unimall-service-search
+          uri: lb://unimall-service-search
+          predicates:
+            - Path=/api/search/**
+          filters:
+            - StripPrefix=1
+        - id: unimall-service-upload
+          uri: lb://unimall-service-upload
+          predicates:
+            - Path=/api/upload/**
+          filters:
+            - StripPrefix=1
+        - id: unimall-service-comments
+          uri: lb://unimall-service-comments
+          predicates:
+            - Path=/api/comments/**
+          filters:
+            - StripPrefix=1
+        - id: unimall-service-admin
+          uri: lb://unimall-service-admin
+          predicates:
+            - Path=/api/admin/**
+          filters:
+            - StripPrefix=1
+      globalcors:
+        add-to-simple-url-handler-mapping: true
+        cors-configurations:
+          '[/**]':
+            allowedOrigins:
+              - "http://localhost:5173"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+            allowedHeaders: "*"
+            allowCredentials: true
+            maxAge: 3600
+
+unimall:
+  gateway:
+    auth:
+      # 无需登录即可访问的路径（登录/注册/商品浏览/评论浏览）
+      whitelist:
+        - /api/user/login
+        - /api/user/register
+        - /api/goods/list
+        - /api/goods/detail
+        - /api/category/list
+        - /api/comment/list
+        # 上传资源公开访问（带尾斜杠：只放行 /api/upload/xxx 资源路径，上传接口 POST /api/upload 仍需登录）
+        - /api/upload/
+        # 短信验证码发送（免登录场景）
+        - /api/sms/send
+        # 商品搜索（公开）
+        - /api/search/goods
+        # 管理面整体放行（鉴权在 admin 服务内部拦截器，勿删除）
+        - /api/admin

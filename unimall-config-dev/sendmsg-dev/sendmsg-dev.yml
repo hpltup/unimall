@@ -1,0 +1,24 @@
+# sendmsg-dev.yml — unimall-service-sendmsg 服务配置（从 unimall-config 拉取）
+
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://127.0.0.1:3306/unimall?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+    username: root
+    password: SQL123456
+  data:
+    redis:
+      host: 192.168.89.101
+      port: 6379
+      password: Redis123456
+      database: 0
+
+mybatis-plus:
+  configuration:
+    # 开发期打印 SQL，上线可移除
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0

@@ -1,5 +1,19 @@
 server:
   port: 10010
+
 spring:
   application:
     name: unimall-config
+  cloud:
+    config:
+      server:
+        git:
+          # gitee 私有仓库（配置文件：application.yml + 各服务 {name}-dev.yml，共 13 个）
+          uri: https://gitee.com/mystic-voyage/unimall-config-dev.git
+          username: mystic-voyage
+          # 私人令牌：通过环境变量 GITEE_TOKEN 注入（IDEA Run Configuration 或系统环境变量），禁止写明文
+          password: ${GITEE_TOKEN}
+          # gitee 默认分支为 master；若仓库是 main 分支则改为 main
+          default-label: master
+          # 各服务配置文件在 {name}-dev/ 子目录中，追加搜索路径（application.yml 在根目录，默认即可找到）
+          search-paths: '*-dev'

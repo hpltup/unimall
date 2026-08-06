@@ -1,0 +1,20 @@
+# upload-dev.yml — unimall-service-upload 服务配置（从 unimall-config 拉取）
+
+spring:
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 20MB
+
+unimall:
+  upload:
+    # 本地存储目录（结尾必须带 /）
+    path: D:/unimall-upload/
+    # 单文件上限 5MB
+    max-size: 5242880
+    allowed-ext:
+      - jpg
+      - jpeg
+      - png
+      - gif
+      - webp
