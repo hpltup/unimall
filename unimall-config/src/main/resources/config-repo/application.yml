@@ -5,7 +5,10 @@ unimall:
   jwt:
     # 生产务必用环境变量 JWT_SECRET 注入（openssl rand -base64 48 生成），禁止提交真实密钥
     secret: ${JWT_SECRET:unimall-dev-placeholder-secret-key-please-change-in-production-0123456789}
-    expire-seconds: 1800
+    # JWT 有效期（7 天，兜底）；实际会话活跃度由 session-seconds 滑动控制
+    expire-seconds: 604800
+    # 会话滑动超时：30 分钟无操作则 Redis 白名单 key 过期，需重新登录
+    session-seconds: 1800
 
 # Bus 配置动态刷新（RabbitMQ，虚拟机 Docker）
 spring:

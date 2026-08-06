@@ -5,14 +5,15 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.unimall.common.exception.BusinessException;
 import com.unimall.common.utils.JwtUtil;
+import com.unimall.common.vo.UserVO;
 import com.unimall.user.mapper.IUserMapper;
 import com.unimall.user.pojo.dto.LoginDTO;
 import com.unimall.user.pojo.dto.RegisterDTO;
 import com.unimall.user.pojo.entity.User;
 import com.unimall.user.pojo.vo.LoginVO;
-import com.unimall.common.vo.UserVO;
 import com.unimall.user.service.IUserService;
 import io.jsonwebtoken.Claims;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -27,12 +28,16 @@ public class UserServiceImpl extends ServiceImpl<IUserMapper, User> implements I
 
     private final StringRedisTemplate redisTemplate;
     private final JwtUtil jwtUtil;
+    /** 会话滑动超时（秒）：30 分钟无操作则 Redis 白名单 key 过期 */
+    private final long sessionSeconds;
     private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
-    public UserServiceImpl(StringRedisTemplate redisTemplate, JwtUtil jwtUtil)
+    public UserServiceImpl(StringRedisTemplate redisTemplate, JwtUtil jwtUtil,
+                           @Value("${unimall.jwt.session-seconds:1800}") long sessionSeconds)
     {
         this.redisTemplate = redisTemplate;
         this.jwtUtil = jwtUtil;
+        this.sessionSeconds = sessionSeconds;
     }
 
     @Override
@@ -69,13 +74,13 @@ public class UserServiceImpl extends ServiceImpl<IUserMapper, User> implements I
             throw new BusinessException(1004, "账号已被禁用");
         }
 
-        // 签发 JWT 并写入 Redis 白名单（TTL 与 JWT 有效期一致）
+        // 签发 JWT（有效期 7 天兜底）并写入 Redis 白名单（TTL = 会话滑动超时）
         String token = jwtUtil.generateToken(user.getId());
         Claims claims = jwtUtil.parseToken(token);
         redisTemplate.opsForValue().set(
                 REDIS_TOKEN_PREFIX + jwtUtil.getJti(claims),
                 String.valueOf(user.getId()),
-                Duration.ofSeconds(jwtUtil.getExpireSeconds()));
+                Duration.ofSeconds(sessionSeconds));
 
         LoginVO vo = new LoginVO();
         vo.setToken(token);
@@ -123,6 +128,20 @@ public class UserServiceImpl extends ServiceImpl<IUserMapper, User> implements I
                 .eq(User::getId, id)
                 .set(User::getStatus, status)
                 .update();
+    }
+
+    @Override
+    public void logout(String token)
+    {
+        try
+        {
+            Claims claims = jwtUtil.parseToken(token);
+            redisTemplate.delete(REDIS_TOKEN_PREFIX + jwtUtil.getJti(claims));
+        }
+        catch (Exception ignored)
+        {
+            // token 已失效则无需处理（登出幂等）
+        }
     }
 
     private UserVO toVO(User user)

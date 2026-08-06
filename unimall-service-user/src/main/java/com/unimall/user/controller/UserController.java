@@ -48,6 +48,17 @@ public class UserController
     }
 
     /**
+     * 登出（需登录）：删除 Redis 白名单 key，token 立即失效
+     */
+    @PostMapping("/logout")
+    public Result<Void> logout(@RequestHeader("Authorization") String authorization)
+    {
+        String token = authorization.startsWith("Bearer ") ? authorization.substring(7) : authorization;
+        userService.logout(token);
+        return Result.ok();
+    }
+
+    /**
      * 服务间内部接口（admin 调用，不走网关）：用户分页
      */
     @GetMapping("/internal/admin-list")

@@ -6,6 +6,7 @@ import com.unimall.common.utils.JwtUtil;
 import com.unimall.gateway.config.AuthProperties;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
@@ -19,11 +20,13 @@ import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 
 /**
  * 网关全局 JWT 鉴权过滤器（Redis 白名单模式）
  * 白名单直接放行；其余请求校验 Authorization: Bearer <token>，
- * 解析成功且 Redis 中存在 login:token:{jti} 才放行，并附加 X-User-Id 头
+ * 解析成功且 Redis 中存在 login:token:{jti} 才放行，并附加 X-User-Id 头。
+ * 校验通过时**续期会话**（滑动超时）：用户持续活跃则 Redis key 永不过期。
  */
 @Component
 public class AuthGlobalFilter implements GlobalFilter, Ordered
@@ -35,6 +38,9 @@ public class AuthGlobalFilter implements GlobalFilter, Ordered
     private final JwtUtil jwtUtil;
     private final AuthProperties authProperties;
     private final ReactiveStringRedisTemplate redisTemplate;
+    /** 会话滑动超时（秒）：每次校验通过重置 TTL */
+    @Value("${unimall.jwt.session-seconds:1800}")
+    private long sessionSeconds;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public AuthGlobalFilter(JwtUtil jwtUtil, AuthProperties authProperties, ReactiveStringRedisTemplate redisTemplate)
@@ -77,15 +83,16 @@ public class AuthGlobalFilter implements GlobalFilter, Ordered
         String jti = jwtUtil.getJti(claims);
         Long userId = jwtUtil.getUserId(claims);
 
-        // 4. Redis 白名单校验：key 存在才放行（登出/过期已被删除）
+        // 4. Redis 白名单校验：key 存在才放行（登出/超时已被删除），并滑动续期
         return redisTemplate.opsForValue()
                 .get(REDIS_TOKEN_PREFIX + jti)
-                .flatMap(value -> {
-                    ServerWebExchange mutated = exchange.mutate()
-                            .request(builder -> builder.header(USER_ID_HEADER, String.valueOf(userId)))
-                            .build();
-                    return chain.filter(mutated);
-                })
+                .flatMap(value -> redisTemplate.expire(REDIS_TOKEN_PREFIX + jti, Duration.ofSeconds(sessionSeconds))
+                        .then(Mono.defer(() -> {
+                            ServerWebExchange mutated = exchange.mutate()
+                                    .request(builder -> builder.header(USER_ID_HEADER, String.valueOf(userId)))
+                                    .build();
+                            return chain.filter(mutated);
+                        })))
                 .switchIfEmpty(unauthorized(exchange.getResponse()));
     }
 

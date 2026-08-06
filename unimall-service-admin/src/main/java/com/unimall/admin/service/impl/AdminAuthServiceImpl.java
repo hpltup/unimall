@@ -1,5 +1,6 @@
 package com.unimall.admin.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.unimall.admin.mapper.IAdminUserMapper;
 import com.unimall.admin.pojo.dto.AdminLoginDTO;
 import com.unimall.admin.pojo.entity.AdminUser;
@@ -8,6 +9,7 @@ import com.unimall.admin.service.IAdminAuthService;
 import com.unimall.common.exception.BusinessException;
 import com.unimall.common.utils.JwtUtil;
 import io.jsonwebtoken.Claims;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -23,20 +25,24 @@ public class AdminAuthServiceImpl implements IAdminAuthService
     private final IAdminUserMapper adminUserMapper;
     private final StringRedisTemplate redisTemplate;
     private final JwtUtil jwtUtil;
+    /** 会话滑动超时（秒）：30 分钟无操作则 Redis 白名单 key 过期 */
+    private final long sessionSeconds;
     private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
-    public AdminAuthServiceImpl(IAdminUserMapper adminUserMapper, StringRedisTemplate redisTemplate, JwtUtil jwtUtil)
+    public AdminAuthServiceImpl(IAdminUserMapper adminUserMapper, StringRedisTemplate redisTemplate, JwtUtil jwtUtil,
+                                @Value("${unimall.jwt.session-seconds:1800}") long sessionSeconds)
     {
         this.adminUserMapper = adminUserMapper;
         this.redisTemplate = redisTemplate;
         this.jwtUtil = jwtUtil;
+        this.sessionSeconds = sessionSeconds;
     }
 
     @Override
     public AdminLoginVO login(AdminLoginDTO dto)
     {
         AdminUser admin = adminUserMapper.selectOne(
-                new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<AdminUser>()
+                new LambdaQueryWrapper<AdminUser>()
                         .eq(AdminUser::getUsername, dto.getUsername()));
         if (admin == null)
         {
@@ -51,12 +57,13 @@ public class AdminAuthServiceImpl implements IAdminAuthService
             throw new BusinessException(9003, "管理员已被禁用");
         }
 
+        // 签发 JWT（有效期 7 天兜底）并写入 Redis 白名单（TTL = 会话滑动超时）
         String token = jwtUtil.generateToken(admin.getId());
         Claims claims = jwtUtil.parseToken(token);
         redisTemplate.opsForValue().set(
                 REDIS_TOKEN_PREFIX + jwtUtil.getJti(claims),
                 String.valueOf(admin.getId()),
-                Duration.ofSeconds(jwtUtil.getExpireSeconds()));
+                Duration.ofSeconds(sessionSeconds));
 
         AdminLoginVO vo = new AdminLoginVO();
         vo.setToken(token);

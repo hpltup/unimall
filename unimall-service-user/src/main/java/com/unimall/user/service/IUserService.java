@@ -31,4 +31,9 @@ public interface IUserService
      * 服务间调用（admin）：禁用/启用
      */
     void adminUpdateStatus(Long id, Integer status);
+
+    /**
+     * 登出：删除 Redis 白名单 key（login:token:{jti}），token 立即失效
+     */
+    void logout(String token);
 }

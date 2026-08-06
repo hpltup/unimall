@@ -299,7 +299,12 @@ curl http://localhost:10011/api/admin/seckill/list -H "Authorization: Bearer $AD
 ### ⏳ 待验证
 
 - ~~Bus 动态刷新~~ → **已验证 ✅**：改配置 → push gitee → `POST /actuator/busrefresh`（204）→ 各服务热刷新（test-route 不重启 gateway 即生效）
-- Token 续期机制（refresh token / 滑动过期，当前固定 30 分钟）
+- ~~Token 续期机制~~ → **已实现 + 验证 ✅**：滑动续期（JWT 7 天 `expire-seconds: 604800` + 会话 30 分钟 `session-seconds: 1800`），网关校验通过续 TTL（1735 → 请求后 1799），用户活跃不掉线
+
+### 剩余 WIP
+
+- 单元测试（项目无测试框架）
+- 生产化项（Feign 熔断、RBAC、统计概览、限流等）
 
 ### 🕳 测试踩过的坑（排障参考）
 

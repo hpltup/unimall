@@ -9,6 +9,7 @@
 | `POST /user/register` | 注册（username 唯一 + BCrypt + 返回 id） | 白名单放行 |
 | `POST /user/login` | 登录（校验密码 → 签发 JWT → Redis `login:token:{jti}` TTL=expire-seconds → 返回 token） | 白名单放行 |
 | `GET /user/info` | 用户信息（**从请求头 `X-User-Id` 取 userId**，网关附加，服务端信任） | 需登录 |
+| `POST /user/logout` | 登出：删 Redis `login:token:{jti}`，token 立即失效（已验证） | 需登录 |
 | `GET /user/internal/admin-list` | **内部接口**（admin 调）：用户分页（用户名/昵称模糊） |
 | `PUT /user/internal/admin-status` | **内部接口**（admin 调）：禁用/启用 |
 

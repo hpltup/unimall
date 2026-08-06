@@ -170,6 +170,6 @@ mvn clean install    # 全量构建并安装到本地仓库（unimall-common 被
 
 1. ~~config native 未激活~~ → **已改为 gitee git 仓库模式**（`spring.cloud.config.server.git` + `search-paths: '*-dev'`），配置文件在 gitee 仓库 `unimall-config-dev`
 2. ~~Bus 未接入~~ → **已接入**（`spring-cloud-starter-bus-amqp` + actuator，`POST /actuator/busrefresh` 广播热刷新已验证，RabbitMQ 虚拟机 `user/123456`）
-3. C 端登出接口未实现（登出 = 删除 Redis `login:token:{jti}`，机制已预留）
+3. ~~C 端登出接口未实现~~ → **已实现**：`POST /user/logout`（删 Redis `login:token:{jti}`，token 立即失效，已验证）
 4. ~~运行验证未做~~ → **全链路验证已完成**（注册→下单→支付/取消→秒杀防超卖→搜索→后台→Bus 热刷新，详见 `TESTING.md`，含测试期修复的 15 个问题）
-5. **Token 续期机制未做**：当前 JWT 固定 30 分钟过期（`expire-seconds: 1800`），无 refresh token / 滑动续期——用户操作中会"突然下线"，需后续实现
+5. ~~Token 续期机制未做~~ → **已实现滑动续期**：JWT 7 天兜底（`expire-seconds: 604800`）+ Redis 会话 30 分钟滑动（`session-seconds: 1800`），网关/admin 拦截器校验通过即续 TTL，用户活跃不掉线、30 分钟无操作需重登
