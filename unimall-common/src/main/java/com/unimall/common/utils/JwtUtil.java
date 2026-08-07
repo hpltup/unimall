@@ -10,7 +10,8 @@ import java.util.Date;
 import java.util.UUID;
 
 /**
- * JWT 工具类（HS256）
+ * JWT 工具类
+ * 实际签名算法由 jjwt 按密钥长度自动选择：>= 48 字节用 HS512（当前密钥 64 字节 → HS512）
  * 纯 Java，无 Spring 依赖，网关（校验）与 user 服务（签发）共用
  */
 public class JwtUtil
@@ -19,7 +20,7 @@ public class JwtUtil
     private final long expireSeconds;
 
     /**
-     * @param secret        HS256 对称密钥，必须 >= 32 字节（256 bit）
+     * @param secret        对称密钥，必须 >= 32 字节（256 bit），64 字节时为 HS512
      * @param expireSeconds token 有效期（秒）
      */
     public JwtUtil(String secret, long expireSeconds)

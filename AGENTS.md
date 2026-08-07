@@ -104,7 +104,7 @@ com.unimall.user/
 
 - **管理/内部接口保护**：网关 `AdminProtectFilter(order=-200)` 拦截普通用户访问管理操作与内部接口（`POST /api/goods`、`PUT /api/goods/status`、`/api/*/internal/**`、`/api/goods/batch|deduct|restore`、`POST /api/seckill/activity`）→ 403；管理操作只能走 `/api/admin/*`（admin 服务 Feign 直连，不经网关）
 - Redis key 前缀 `login:token:`（网关 `AuthGlobalFilter` 与 user 服务 `UserServiceImpl` 各有一份常量，注意保持一致）
-- JWT payload：`sub`=userId、`jti`=UUID、`iat`、`exp`；HS256，密钥必须 >= 32 字节
+- JWT payload：`sub`=userId、`jti`=UUID、`iat`、`exp`；实际签名 HS512（jjwt `Keys.hmacShaKeyFor` 按密钥长度自动选择算法，当前密钥 64 字节），密钥必须 >= 32 字节
 
 ### 路由与跨域
 
@@ -141,6 +141,15 @@ mvn clean install    # 全量构建并安装到本地仓库（unimall-common 被
 | MySQL | 127.0.0.1:3306/unimall | root / SQL123456 |
 | Redis | 192.168.89.101:6379 | Redis123456（db 0） |
 | Nacos | 127.0.0.1:8848 | - |
+
+### Docker 部署（方案 A：仅容器化服务）
+
+13 个可部署服务（common 是库、registry 是壳，不部署）各带 `Dockerfile`（`eclipse-temurin:21-jre` + COPY jar，`-Duser.timezone=Asia/Shanghai`），根目录 `docker-compose.yml` 统一编排（`depends_on` 等 config 健康、`/dev/tcp` healthcheck、upload 挂 volume）。
+
+- **构建方式**：先本地 `mvn -q -o clean package -DskipTests` 生成 jar，再 `docker compose build`（不在容器内编译）
+- **网络关键点**：容器跑在虚拟机 Docker，Redis/ES/RabbitMQ 在虚拟机本机（配置中心已是 `192.168.89.101` 不改）；**Nacos/MySQL 在 Windows 宿主**，需在 `.env`（见 `.env.example`）填虚拟机可达的宿主 IP（`NACOS_ADDR`/`MYSQL_HOST`），compose 用 `SPRING_DATASOURCE_URL`、`SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR`、`SPRING_CONFIG_IMPORT` 覆盖配置中心写死的 `127.0.0.1`
+- **敏感配置**：`GITEE_TOKEN`（config 拉 gitee）、`DEEPSEEK_API_KEY`（AI 客服）均从 `.env` 注入，不落镜像
+- 完整步骤、前置（MySQL 允许远程/Nacos 放行防火墙）、排障见 **`DEPLOY.md`**
 
 ## 五、代码规范
 

@@ -1,0 +1,213 @@
+# UniMall 微服务部署编排（方案 A：仅容器化服务，中间件用现有的）
+#
+# 网络拓扑前提：
+#   - 本 compose 运行在虚拟机 Docker（192.168.89.101）
+#   - Redis/ES/RabbitMQ 在虚拟机本机（配置中心已配 192.168.89.101，无需改）
+#   - Nacos(8848) 与 MySQL(3306) 在 Windows 宿主机，需在 .env 中填虚拟机可达的宿主 IP
+#
+# 使用：
+#   1. 复制 .env.example 为 .env 并填写（GITEE_TOKEN / NACOS_ADDR / MYSQL_HOST / DEEPSEEK_API_KEY）
+#   2. 构建：docker compose build
+#   3. 启动：docker compose up -d（自动按依赖顺序启动）
+#   4. 查看：docker compose ps / docker compose logs -f unimall-config
+
+name: unimall
+
+services:
+  # ---------- 配置中心（先启动，其余服务依赖它拉配置） ----------
+  unimall-config:
+    build: ./unimall-config
+    container_name: unimall-config
+    environment:
+      - GITEE_TOKEN=${GITEE_TOKEN:?请在 .env 中配置 GITEE_TOKEN}
+    ports:
+      - "10010:10010"
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/10010'"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+    networks: [unimall-net]
+
+  # ---------- 网关（对外统一入口） ----------
+  unimall-gateway:
+    build: ./unimall-gateway
+    container_name: unimall-gateway
+    environment: &common-env
+      - SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR=${NACOS_ADDR:?请在 .env 中配置 NACOS_ADDR}
+      - SPRING_CONFIG_IMPORT=configserver:http://unimall-config:10010
+    ports:
+      - "10011:10011"
+    depends_on:
+      unimall-config:
+        condition: service_healthy
+    networks: [unimall-net]
+
+  # ---------- 业务服务（均需 Nacos + config；带数据源的服务另覆盖 MySQL 地址） ----------
+  unimall-service-user:
+    build: ./unimall-service-user
+    container_name: unimall-service-user
+    environment:
+      <<: *common-env
+      - SPRING_DATASOURCE_URL=jdbc:mysql://${MYSQL_HOST:?请在 .env 中配置 MYSQL_HOST}:3306/unimall?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=SQL123456
+    ports:
+      - "10012:10012"
+    depends_on:
+      unimall-config:
+        condition: service_healthy
+    networks: [unimall-net]
+
+  unimall-service-goods:
+    build: ./unimall-service-goods
+    container_name: unimall-service-goods
+    environment:
+      <<: *common-env
+      - SPRING_DATASOURCE_URL=jdbc:mysql://${MYSQL_HOST}:3306/unimall?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=SQL123456
+    ports:
+      - "10013:10013"
+    depends_on:
+      unimall-config:
+        condition: service_healthy
+    networks: [unimall-net]
+
+  unimall-service-cart:
+    build: ./unimall-service-cart
+    container_name: unimall-service-cart
+    environment:
+      <<: *common-env
+      - SPRING_DATASOURCE_URL=jdbc:mysql://${MYSQL_HOST}:3306/unimall?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=SQL123456
+    ports:
+      - "10014:10014"
+    depends_on:
+      unimall-config:
+        condition: service_healthy
+    networks: [unimall-net]
+
+  unimall-service-order:
+    build: ./unimall-service-order
+    container_name: unimall-service-order
+    environment:
+      <<: *common-env
+      - SPRING_DATASOURCE_URL=jdbc:mysql://${MYSQL_HOST}:3306/unimall?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=SQL123456
+    ports:
+      - "10015:10015"
+    depends_on:
+      unimall-config:
+        condition: service_healthy
+    networks: [unimall-net]
+
+  unimall-service-seckill:
+    build: ./unimall-service-seckill
+    container_name: unimall-service-seckill
+    environment:
+      <<: *common-env
+      - SPRING_DATASOURCE_URL=jdbc:mysql://${MYSQL_HOST}:3306/unimall?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=SQL123456
+    ports:
+      - "10016:10016"
+    depends_on:
+      unimall-config:
+        condition: service_healthy
+    networks: [unimall-net]
+
+  unimall-service-comments:
+    build: ./unimall-service-comments
+    container_name: unimall-service-comments
+    environment:
+      <<: *common-env
+      - SPRING_DATASOURCE_URL=jdbc:mysql://${MYSQL_HOST}:3306/unimall?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=SQL123456
+    ports:
+      - "10017:10017"
+    depends_on:
+      unimall-config:
+        condition: service_healthy
+    networks: [unimall-net]
+
+  # 上传服务：容器内存储路径 /app/upload，挂载宿主机目录持久化
+  unimall-service-upload:
+    build: ./unimall-service-upload
+    container_name: unimall-service-upload
+    environment:
+      <<: *common-env
+      - UNIMALL_UPLOAD_PATH=/app/upload/
+    ports:
+      - "10018:10018"
+    volumes:
+      - ./data/upload:/app/upload
+    depends_on:
+      unimall-config:
+        condition: service_healthy
+    networks: [unimall-net]
+
+  unimall-service-sendmsg:
+    build: ./unimall-service-sendmsg
+    container_name: unimall-service-sendmsg
+    environment:
+      <<: *common-env
+      - SPRING_DATASOURCE_URL=jdbc:mysql://${MYSQL_HOST}:3306/unimall?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=SQL123456
+    ports:
+      - "10019:10019"
+    depends_on:
+      unimall-config:
+        condition: service_healthy
+    networks: [unimall-net]
+
+  # 搜索服务：ES 在虚拟机 192.168.89.101:9200（配置中心 search-dev.yml 已配）
+  unimall-service-search:
+    build: ./unimall-service-search
+    container_name: unimall-service-search
+    environment:
+      <<: *common-env
+    ports:
+      - "10020:10020"
+    depends_on:
+      unimall-config:
+        condition: service_healthy
+    networks: [unimall-net]
+
+  unimall-service-admin:
+    build: ./unimall-service-admin
+    container_name: unimall-service-admin
+    environment:
+      <<: *common-env
+      - SPRING_DATASOURCE_URL=jdbc:mysql://${MYSQL_HOST}:3306/unimall?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=SQL123456
+    ports:
+      - "10021:10021"
+    depends_on:
+      unimall-config:
+        condition: service_healthy
+    networks: [unimall-net]
+
+  # AI 客服：需 DEEPSEEK_API_KEY（DeepSeek 开放平台），不用 AI 可留空但对话会 401
+  unimall-service-ai:
+    build: ./unimall-service-ai
+    container_name: unimall-service-ai
+    environment:
+      <<: *common-env
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY:-}
+    ports:
+      - "10022:10022"
+    depends_on:
+      unimall-config:
+        condition: service_healthy
+    networks: [unimall-net]
+
+networks:
+  unimall-net:
+    driver: bridge

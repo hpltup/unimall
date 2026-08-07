@@ -323,6 +323,7 @@ curl -N http://localhost:10011/api/ai/chat \
 
 - ~~Bus 动态刷新~~ → **已验证 ✅**：改配置 → push gitee → `POST /actuator/busrefresh`（204）→ 各服务热刷新（test-route 不重启 gateway 即生效）
 - ~~Token 续期机制~~ → **已实现 + 验证 ✅**：滑动续期（JWT 7 天 `expire-seconds: 604800` + 会话 30 分钟 `session-seconds: 1800`），网关校验通过续 TTL（1735 → 请求后 1799），用户活跃不掉线
+- **Docker 部署（方案 A）→ 已搭建未实测 ⏳**：13 个服务 `Dockerfile` + `docker-compose.yml` + `.env.example` + `DEPLOY.md` 已就绪（jar 已 package）；待虚拟机执行 `docker compose build && up -d` 验证。关键前置：虚拟机可达 Windows 宿主 IP（Nacos/MySQL 在其上）、MySQL 允许 root 远程、防火墙放行 3306/8848
 
 ### 剩余 WIP
 

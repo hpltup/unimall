@@ -1,0 +1,14 @@
+# 排除编译中间产物，只保留 target/*.jar 作为构建输入
+target/classes/
+target/test-classes/
+target/maven-status/
+target/maven-archiver/
+target/generated-sources/
+target/generated-test-sources/
+target/surefire-reports/
+target/*.original
+target/*.txt
+src/
+*.md
+.git/
+.idea/
