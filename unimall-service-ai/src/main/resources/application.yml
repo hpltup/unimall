@@ -1,0 +1,18 @@
+# 本地引导配置：只放端口、应用名、Nacos 地址、配置中心拉取信息
+# 业务配置（Redis、Spring AI/DeepSeek 等）在配置中心 ai-dev.yml
+
+server:
+  port: 10022
+
+spring:
+  application:
+    name: unimall-service-ai
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 127.0.0.1:8848
+    config:
+      name: ai
+      profile: dev
+  config:
+    import: configserver:http://127.0.0.1:10010

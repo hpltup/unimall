@@ -27,12 +27,13 @@ UniMall 是一个基于 Spring Cloud Alibaba 的**微服务商城系统**（毕�
 | Lombok | 1.18.30 | `@Data` 等 |
 | Spring Cloud Bus (AMQP) | 2023.0.1 管理 | 配置动态刷新广播（RabbitMQ，虚拟机 `user/123456`），`/actuator/busrefresh` |
 | Actuator | Boot 3.3 管理 | 所有服务暴露 `busrefresh,refresh,health` 端点 |
+| Spring AI | 1.0.0（Maven Central 正式版，根 pom `spring-ai-bom` 管理） | AI 客服模块用：`spring-ai-starter-model-openai` 走 OpenAI 兼容协议接 DeepSeek，`@Tool` 函数调用 + SSE 流式 |
 
 ## 二、模块划分
 
 根 pom（`groupId=com.unimall`, `artifactId=UniMall`, `version=1.0-SNAPSHOT`, packaging=pom）聚合 15 个模块。
 
-### 已实现（7 个）
+### 已实现（15 个）
 
 | 模块 | 端口 | 职责 |
 |---|---|---|
@@ -50,13 +51,14 @@ UniMall 是一个基于 Spring Cloud Alibaba 的**微服务商城系统**（毕�
 | `unimall-service-sendmsg` | 10019 | 消息服务：短信验证码（模拟发送，Redis TTL 5 分钟 + 一次性校验，`/api/sms/send` 白名单）+ 站内信（发送/列表/未读数/标记已读） |
 | `unimall-service-search` | 10020 | 搜索服务（Elasticsearch 8.x + IK/拼音分词）：定时全量同步 goods → ES（10 分钟 + 手动 `POST /search/sync`）、`GET /search/goods` 全文检索（相关性 + 销量排序） |
 | `unimall-service-admin` | 10021 | 后台管理（聚合层，Feign 调各服务）：管理员登录（独立 JWT + Redis `admin:token:` 白名单，内部拦截器鉴权）、商品/订单/用户/秒杀活动管理 |
+| `unimall-service-ai` | 10022 | AI 客服（Spring AI 1.0.0 + DeepSeek，OpenAI 兼容协议）：SSE 流式对话 + Function Calling 工具（搜商品/加购/查购物车/确认后下单/查订单/取消订单），会话存 Redis；**支付不代付**（下单后引导用户在订单中心自行支付）；API Key 走 `DEEPSEEK_API_KEY` 环境变量 |
 
 ### 空骨架
 
-**全部 14 个模块已实现**，无空骨架。
+**全部 15 个模块已实现**，无空骨架。
 
 > `unimall-item` 已并入 `unimall-service-goods`（商品模型内聚在商品服务，根 pom 已移除该模块）。
-> 网关路由已为 admin/cart/comments/goods/order/search/seckill/upload 预留（`/api/{name}/**`），`sendmsg` 暂无路由。
+> 网关路由统一 `/api/{服务}/**` + StripPrefix=1，全部业务服务已配路由（含 sendmsg 的 `/api/sms/**`、`/api/message/**` 与 ai 的 `/api/ai/**`）。
 
 ### 包名与代码分层约定
 

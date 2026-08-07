@@ -22,7 +22,11 @@ public class GoodsServiceImpl extends ServiceImpl<IGoodsMapper, Goods> implement
     {
         Page<Goods> page = lambdaQuery()
                 .eq(dto.getCategoryId() != null, Goods::getCategoryId, dto.getCategoryId())
-                .like(StringUtils.isNotBlank(dto.getKeyword()), Goods::getName, dto.getKeyword())
+                // 关键词：模糊匹配 商品名 或 副标题（与 GoodsQueryDTO 注释约定一致）
+                .and(StringUtils.isNotBlank(dto.getKeyword()),
+                        w -> w.like(Goods::getName, dto.getKeyword())
+                                .or()
+                                .like(Goods::getSubTitle, dto.getKeyword()))
                 .eq(dto.getStatus() != null, Goods::getStatus, dto.getStatus())
                 .orderByDesc(Goods::getCreateTime)
                 .page(new Page<>(dto.getPageNum(), dto.getPageSize()));

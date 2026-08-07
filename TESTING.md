@@ -19,6 +19,7 @@
 | unimall-service-sendmsg  | 10019    | 短信/站内信                  |
 | unimall-service-search   | 10020    | 搜索（ES）                  |
 | unimall-service-admin    | 10021    | 后台管理                    |
+| unimall-service-ai       | 10022    | AI 客服（Spring AI + DeepSeek） |
 | unimall-registry         | 8080（默认） | Nacos Server（独立部署，8848） |
 
 ## 二、环境准备
@@ -59,24 +60,28 @@ startup.cmd -m standalone
 - Redis：确认 192.168.89.101:6379 可连接，密码 Redis123456
 - ES：确认 192.168.89.101:9200 可访问，**IK 和拼音插件已安装**（索引创建依赖）
 
-## 三、前置：config 端激活 native 模式（必须）
+## 三、前置：config 端 git 模式（gitee 配置仓库）
 
-所有服务启动时都从 config 拉配置，config 必须先能提供 `config-repo/` 下的文件。
+所有服务启动时都从 config 拉配置，config 以 **git 模式** 从 gitee 私有仓库拉取，需满足：
 
-编辑 `unimall-config/src/main/resources/application.yml`，追加：
+1. **gitee 仓库已存在**：`https://gitee.com/mystic-voyage/unimall-config-dev.git`，目录结构：
 
-```yaml
-spring:
-  profiles:
-    active: native
-  cloud:
-    config:
-      server:
-        native:
-          search-locations: classpath:/config-repo
+```
+application.yml            # 共享配置（jwt、rabbitmq、actuator）
+{name}-dev/{name}-dev.yml  # 各服务业务配置，如 user-dev/user-dev.yml、ai-dev/ai-dev.yml
 ```
 
-（注：`config-repo/` 下 13 个配置文件已齐，含各服务 `{name}-dev.yml` 与共享 `application.yml`）
+2. **环境变量 `GITEE_TOKEN`**：gitee 私人令牌（仓库是私有的），config 拉取时用 `username: mystic-voyage` + `password: ${GITEE_TOKEN}`
+
+3. **config 本地配置要点**（`unimall-config/src/main/resources/application.yml`，config 是 Server，**不拉 gitee 共享配置**，git 仓库/RabbitMQ/management 都在本地）：
+   - `spring.cloud.config.server.git.uri` → gitee 仓库地址
+   - `username: mystic-voyage` + `password: ${GITEE_TOKEN}`
+   - `default-label: master`（gitee 默认分支；若为 main 需改）
+   - `search-paths: '*-dev'`（业务文件在 `{name}-dev/` 子目录；共享 `application.yml` 在根目录默认能搜到）
+
+4. **改配置流程**：改 gitee 仓库（本地副本 `unimall-config-dev/` 同步修改）→ push → `POST /actuator/busrefresh`（任一直连端口）广播热刷新，或重启服务重新拉取
+
+（注：`unimall-config/src/main/resources/config-repo/` 为早期 native 模式的本地仓库副本，git 模式下**已不使用**，仅作配置备份参考；目录结构与 gitee 仓库不完全一致——本地扁平、gitee 子目录）
 
 ## 四、启动顺序
 
@@ -244,6 +249,23 @@ curl -X PUT http://localhost:10011/api/admin/user/status \
 curl http://localhost:10011/api/admin/seckill/list -H "Authorization: Bearer $ADMIN_TOKEN"
 ```
 
+### 11. AI 客服（SSE 流式，需 DEEPSEEK_API_KEY）
+
+```bash
+# 前置：环境变量 DEEPSEEK_API_KEY（DeepSeek 开放平台申请）+ 配置中心 ai-dev.yml（base-url 指向 DeepSeek）
+# 对话（SSE 流式：curl -N 不缓冲，逐段输出 data:，结束发 data:[DONE]；新会话响应头 X-Session-Id 需保存）
+curl -N http://localhost:10011/api/ai/chat \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"message":"你好，介绍一下你自己"}'
+
+# 多轮（携带 X-Session-Id 延续上下文）
+curl -N http://localhost:10011/api/ai/chat \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"sessionId":"<X-Session-Id>","message":"推荐一款手机"}'
+```
+
+工具调用（Function Calling，AI 自动完成，无需用户手动）：搜商品 / 商品详情 / **加购** / 查看购物车 / 下单（先展示清单并征求确认）/ 订单查询 / 取消订单（同样需确认）。**支付由用户在前端自行完成**——AI 无支付工具，下单成功后仅引导到订单中心（不代付）。
+
 ## 六、鉴权验证（网关）
 
 | 场景 | 期望 |
@@ -258,7 +280,7 @@ curl http://localhost:10011/api/admin/seckill/list -H "Authorization: Bearer $AD
 
 | 现象 | 原因 | 处理 |
 |---|---|---|
-| 服务启动报"config 拉取失败/404" | config 未激活 native 或 `{name}-dev.yml` 缺失 | 按第三节配置 native；检查 config-repo 文件齐全 |
+| 服务启动报"config 拉取失败/404" | `GITEE_TOKEN` 未配/令牌失效、gitee 仓库分支或 `{name}-dev.yml` 缺失 | 按第三节检查 config 本地 git 配置与 `GITEE_TOKEN`；确认 gitee 仓库文件已 push |
 | 网关 503（路由到服务失败） | 目标服务未注册到 Nacos | 先启动业务服务，Nacos 控制台确认注册 |
 | 购物车/订单接口 500 | goods 服务不可用（Feign 调用失败） | 确认 goods 已启动；后续可加 Feign 熔断 |
 | 秒杀抢购全部返回"已被抢光" | 活动时间未到/已过，或 Redis 中库存为 0 | 检查活动时间；`redis-cli GET seckill:stock:{id}` 确认 |
@@ -295,6 +317,7 @@ curl http://localhost:10011/api/admin/seckill/list -H "Authorization: Bearer $AD
 | 短信/站内信 | 发码（日志打印 118147）→ 校验 ✅；站内信发/列表/未读数/已读 ✅（路由补 sendmsg 后） |
 | 搜索（ES） | 中文"华为" ✅ + 拼音"huawei"/"mate" ✅（IK+拼音分词）；修复 createTime Long 转换 + 补 stock 字段 |
 | 后台管理 | admin 登录/商品列表/订单列表/用户列表/秒杀列表/上下架/发货/禁用 ✅（修复 user 缺分页插件导致 total=0） |
+| AI 客服 | SSE 流式对话 ✅；搜商品（**修复 goods keyword 只匹配 name**）✅；加购/连续加购 ✅；查看购物车 ✅；确认后下单（两次确认后落库）✅；**拒绝代付**（system prompt 约束，引导订单中心，用户自行支付）✅；订单查询 ✅；取消订单（status→3、库存回补）✅ |
 
 ### ⏳ 待验证
 
@@ -324,3 +347,5 @@ curl http://localhost:10011/api/admin/seckill/list -H "Authorization: Bearer $AD
 14. **config 服务 busrefresh 405/未暴露**：config 是 Server 不拉 gitee 共享配置 → management/rabbitmq 配置必须放 **config 本地 application.yml**
 15. **未知路径返回 5000**：Spring Boot 3.2+ `NoResourceFoundException` 被 `@ExceptionHandler(Exception)` 兜底 → 各服务 GlobalExceptionHandler 单独处理返回 404
 16. **busrefresh 返回 204**：动作型端点正常响应（成功无内容），非错误
+17. **goods 关键词搜不到（如"手机"）**：`GoodsServiceImpl.pageQuery` 的 keyword 只 `like` 商品名（`Goods::getName`），未匹配副标题 → 改为 `and(w -> w.like(name).or().like(subTitle))`（与 DTO 注释"匹配商品名/副标题"一致）
+18. **AI 客服下单"确认—再确认"偏啰嗦**：system prompt 要求下单前展示购物车并确认，模型会展示→询问→用户同意→再确认，体验稍冗余（功能正常）；另：新会话无上下文时"再来一台"类指代会被模型合理澄清（需要 X-Session-Id 延续上下文）

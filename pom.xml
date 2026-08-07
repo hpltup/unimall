@@ -23,6 +23,7 @@
         <module>unimall-service-search</module>
         <module>unimall-service-upload</module>
         <module>unimall-service-comments</module>
+        <module>unimall-service-ai</module>
     </modules>
 
     <parent>
@@ -41,6 +42,8 @@
         <mysql.version>8.0.33</mysql.version>
         <mybatis-plus.version>3.5.5</mybatis-plus.version>
         <lombok.version>1.18.30</lombok.version>
+        <!-- Spring AI：AI 客服模块（unimall-service-ai）用，1.0.0 GA 兼容 Spring Boot 3.3.x -->
+        <spring-ai.version>1.0.0</spring-ai.version>
     </properties>
 
     <dependencyManagement>
@@ -82,6 +85,15 @@
                 <groupId>org.projectlombok</groupId>
                 <artifactId>lombok</artifactId>
                 <version>${lombok.version}</version>
+            </dependency>
+
+            <!-- Spring AI BOM：统一管理 AI 相关依赖版本（AI 客服模块用，Maven Central 正式版） -->
+            <dependency>
+                <groupId>org.springframework.ai</groupId>
+                <artifactId>spring-ai-bom</artifactId>
+                <version>${spring-ai.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>

@@ -65,6 +65,12 @@ spring:
             - Path=/api/sms/**,/api/message/**
           filters:
             - StripPrefix=1
+        - id: unimall-service-ai
+          uri: lb://unimall-service-ai
+          predicates:
+            - Path=/api/ai/**
+          filters:
+            - StripPrefix=1
         - id: unimall-service-admin
           uri: lb://unimall-service-admin
           predicates:

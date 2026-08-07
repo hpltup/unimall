@@ -1,0 +1,26 @@
+# ai-dev.yml — unimall-service-ai 服务配置（从 unimall-config 拉取）
+# DeepSeek API Key 通过环境变量 DEEPSEEK_API_KEY 注入，禁止提交真实密钥
+
+spring:
+  data:
+    redis:
+      host: 192.168.89.101
+      port: 6379
+      password: Redis123456
+      database: 0
+  ai:
+    openai:
+      # DeepSeek 兼容 OpenAI 协议（/v1/chat/completions 与 /chat/completions 均可访问）
+      base-url: https://api.deepseek.com
+      api-key: ${DEEPSEEK_API_KEY:sk-placeholder-please-set-env}
+      chat:
+        options:
+          model: deepseek-chat
+          temperature: 0.7
+
+unimall:
+  ai:
+    # 会话上下文 Redis 存活时间（秒）：2 小时
+    session-ttl-seconds: 7200
+    # 单会话保留的最大消息条数（超出丢最旧）
+    max-messages: 20
